@@ -23,11 +23,7 @@ runs:
           df -h
 
       - name: Install Rust toolchain
-        run: |
-          cd ${{ inputs.kani_dir }}
-          ./scripts/setup/install_rustup.sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        shell: bash
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: cd ${{ inputs.kani_dir }} && ./scripts/setup/${{ inputs.os }}/install_deps.sh
