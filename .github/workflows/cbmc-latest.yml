@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, ubuntu-20.04, ubuntu-22.04]
+        os: [macos-13, ubuntu-20.04, ubuntu-22.04, windows-2022]
     steps:
       - name: Checkout Kani under "kani"
         uses: actions/checkout@v4
@@ -52,6 +52,15 @@ jobs:
         working-directory: ./cbmc
         run: |
           cmake -S . -Bbuild -DWITH_JBMC=OFF -Dsat_impl="minisat2;cadical" -DCMAKE_CXX_COMPILER=$(which clang++)
+          cmake --build build -- -j 4
+          # Prepend the bin directory to $PATH
+          echo "${GITHUB_WORKSPACE}/cbmc/build/bin" >> $GITHUB_PATH
+
+      - name: Build CBMC (Windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        working-directory: ./cbmc
+        run: |
+          cmake -S . -Bbuild -DWITH_JBMC=OFF -Dsat_impl="minisat2;cadical"
           cmake --build build -- -j 4
           # Prepend the bin directory to $PATH
           echo "${GITHUB_WORKSPACE}/cbmc/build/bin" >> $GITHUB_PATH
