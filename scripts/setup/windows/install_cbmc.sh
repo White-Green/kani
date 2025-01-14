@@ -19,7 +19,7 @@ set -x
 
 curl -L -o "$FILE" "$URL"
 touch C:\install_log.txt
-msiexec /i "$FILE" /qn /norestart /l*! C:\install_log.txt
+msiexec /i "$FILE" /qn /norestart /l*! C:\install_log.txt &
 while [ "$(jobs -r | wc -l)" -gt 0 ]; do
   cat C:\install_log.txt
   echo "waiting for finish..."
