@@ -20,9 +20,9 @@ set -x
 curl -L -o "$FILE" "$URL"
 MSYS_NO_PATHCONV=1 msiexec /i "$FILE" /qn /norestart /l* installer_log.txt
 cat installer_log.txt
-cat <<EOF >> ~/.bashrc
+cat <<EOF >> ~/.bash_profile
 export PATH="/c/Program Files/cbmc/bin:$PATH"
 EOF
-source ~/.bashrc
+source ~/.bash_profile
 cbmc --version
 rm $FILE
