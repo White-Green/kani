@@ -24,14 +24,10 @@ if command -v kissat > /dev/null; then
   fi
 fi
 
-# Kissat release
-FILE="rel-${KISSAT_VERSION}.tar.gz"
-URL="https://github.com/arminbiere/kissat/archive/refs/tags/$FILE"
-
 set -x
 
-wget -O "$FILE" "$URL"
-tar -xvzf $FILE
+# Clone Kissat repository with the specified version tag
+git clone --depth 1 --branch "rel-${KISSAT_VERSION}" https://github.com/arminbiere/kissat.git "kissat-rel-${KISSAT_VERSION}"
 DIR_NAME="kissat-rel-${KISSAT_VERSION}"
 cd $DIR_NAME
 ./configure --safe && make kissat && sudo install build/kissat /usr/local/bin
