@@ -22,6 +22,7 @@ touch install_log
 msiexec /i "$FILE" /passive /quiet /qn /norestart /l*! install_log &
 while [ "$(jobs -r | wc -l)" -gt 0 ]; do
   tail -n 10 install_log
+  echo "waiting for finish..."
   sleep 1
 done
 export PATH="C:\Program Files\cbmc\bin;$PATH"
