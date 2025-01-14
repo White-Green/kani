@@ -24,6 +24,6 @@ cat <<EOF >> /etc/profile
 export PATH="/c/Program Files/cbmc/bin:$PATH"
 EOF
 cat /etc/profile
-source /etc/profile
+export PATH="/c/Program Files/cbmc/bin:$PATH"
 cbmc --version
 rm $FILE
