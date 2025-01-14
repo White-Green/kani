@@ -18,13 +18,9 @@ URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/$FI
 set -x
 
 curl -L -o "$FILE" "$URL"
-touch C:\install_log.txt
-msiexec /i "$FILE" /qn /norestart /l*! C:\install_log.txt &
-while [ "$(jobs -r | wc -l)" -gt 0 ]; do
-  cat C:\install_log.txt
-  echo "waiting for finish..."
-  sleep 1
-done
+pwsh -Command "msiexec /i "$FILE" /qn /norestart /l*! install_log.txt"
+cat install_log.txt
+rm install_log.txt
 export PATH="C:\Program Files\cbmc\bin;$PATH"
 cbmc --version
 rm $FILE
