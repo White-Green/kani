@@ -17,7 +17,8 @@ URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/$FI
 
 set -x
 
-wget -O "$FILE" "$URL"
-sudo dpkg -i "$FILE"
+curl -L -o "$FILE" "$URL"
+msiexec /i "$FILE"
+export PATH="C:\Program Files\cbmc\bin;$PATH"
 cbmc --version
 rm $FILE
