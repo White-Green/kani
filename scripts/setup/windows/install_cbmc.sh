@@ -18,9 +18,7 @@ URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/$FI
 set -x
 
 curl -L -o "$FILE" "$URL"
-pwsh -Command "msiexec /i "$FILE" /qn /norestart /l*! install_log.txt"
-cat install_log.txt
-rm install_log.txt
+pwsh -Command "msiexec /i "$FILE" /qn /norestart"
 export PATH="C:\Program Files\cbmc\bin;$PATH"
 cbmc --version
 rm $FILE
