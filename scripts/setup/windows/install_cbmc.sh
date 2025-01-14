@@ -19,7 +19,7 @@ set -x
 
 curl -L -o "$FILE" "$URL"
 touch install_log
-msiexec /i "$FILE" /passive /quiet /norestart /log install_log &
+sudo msiexec /i "$FILE" /passive /quiet /norestart /l! install_log &
 while [ "$(jobs -r | wc -l)" -gt 0 ]; do
   tail -n 10 install_log
   sleep 1
