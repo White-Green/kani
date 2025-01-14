@@ -151,10 +151,12 @@ jobs:
           name: ${{ matrix.prev_job.package }}
 
       - name: Check download
+        shell: bash
         run: |
           ls -lh .
 
       - name: Get toolchain version used to setup kani
+        shell: bash
         run: |
           tar zxvf ${{ matrix.prev_job.bundle }}
           DATE=$(cat ./kani-${{ matrix.prev_job.version }}/rust-toolchain-version | cut -d'-' -f2,3,4)
@@ -162,14 +164,17 @@ jobs:
           echo "DATE=$DATE" >> $GITHUB_ENV
 
       - name: Install Kani from path
+        shell: bash
         run: |
           tar zxvf ${{ matrix.prev_job.package }}
           cargo install --locked --path kani-verifier-${{ matrix.prev_job.crate_version }}
 
       - name: Create a custom toolchain directory
+        shell: bash
         run: mkdir -p ${{ github.workspace }}/../custom_toolchain
 
       - name: Fetch the nightly tarball
+        shell: bash
         run: |
           echo "Downloading Rust toolchain from rust server."
           curl --proto '=https' --tlsv1.2 -O https://static.rust-lang.org/dist/$DATE/rust-nightly-${{ matrix.rust_target }}.tar.gz
@@ -177,10 +182,12 @@ jobs:
           ./rust-nightly-${{ matrix.rust_target }}/install.sh --prefix=${{ github.workspace }}/../custom_toolchain
 
       - name: Ensure installation is correct
+        shell: bash
         run: |
           cargo kani setup --use-local-bundle ./${{ matrix.prev_job.bundle }} --use-local-toolchain ${{ github.workspace }}/../custom_toolchain/
 
       - name: Ensure that the rustup toolchain is not present
+        shell: bash
         run: |
           if [ ! -e "~/.rustup/toolchains/" ]; then
             echo "Default toolchain file does not exist. Proceeding with running tests."
@@ -193,6 +200,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Move rust-toolchain file to outside kani
+        shell: bash
         run: |
           mkdir -p ${{ github.workspace }}/../post-setup-tests
           cp -r tests/cargo-ui ${{ github.workspace }}/../post-setup-tests
@@ -200,6 +208,7 @@ jobs:
           ls ${{ github.workspace }}/../post-setup-tests
 
       - name: Run cargo-kani tests after moving
+        shell: bash
         run: |
           for dir in supported-lib-types/rlib multiple-harnesses verbose; do
             >&2 echo "Running test $dir"
@@ -209,6 +218,7 @@ jobs:
           done
 
       - name: Check --help and --version
+        shell: bash
         run: |
           >&2 echo "Running cargo kani --help and --version"
           pushd ${{ github.workspace }}/../post-setup-tests/Assert
@@ -216,6 +226,7 @@ jobs:
           popd
 
       - name: Run standalone kani test
+        shell: bash
         run: |
           >&2 echo "Running test on file bool_ref"
           pushd ${{ github.workspace }}/../post-setup-tests/Assert
@@ -248,10 +259,12 @@ jobs:
           name: ${{ matrix.prev_job.package }}
 
       - name: Check download
+        shell: bash
         run: |
           ls -lh .
 
       - name: Install from bundle
+        shell: bash
         run: |
           tar zxvf ${{ matrix.prev_job.package }}
           cargo install --locked --path kani-verifier-${{ matrix.prev_job.crate_version }}
@@ -261,6 +274,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tests
+        shell: bash
         # TODO: Customize compiletest to run custom kani. For now, just run a few cargo kani tests.
         run: |
           for dir in simple-lib build-rs-works simple-kissat; do

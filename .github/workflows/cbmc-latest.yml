@@ -58,6 +58,7 @@ jobs:
 
       - name: Build CBMC (Windows)
         if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: bash
         working-directory: ./cbmc
         run: |
           cmake -S . -Bbuild -DWITH_JBMC=OFF -Dsat_impl="minisat2;cadical"
@@ -66,6 +67,7 @@ jobs:
           echo "${GITHUB_WORKSPACE}/cbmc/build/bin" >> $GITHUB_PATH
 
       - name: Execute Kani regressions
+        shell: bash
         working-directory: ./kani
         run: ./scripts/kani-regression.sh
 

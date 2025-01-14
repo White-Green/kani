@@ -29,6 +29,7 @@ jobs:
           os: ${{ matrix.os }}
 
       - name: Execute Kani regression
+        shell: bash
         run: ./scripts/kani-regression.sh
 
   benchcomp-tests:
