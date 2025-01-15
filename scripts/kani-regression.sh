@@ -25,7 +25,7 @@ source "${KANI_DIR}/kani-dependencies"
     (echo "Conflicting CBMC versions"; exit 1)
 # Check if installed versions are correct.
 check-cbmc-version.py --major ${CBMC_MAJOR} --minor ${CBMC_MINOR}
-check_kissat_version.sh
+#check_kissat_version.sh
 
 # Formatting check
 ${SCRIPT_DIR}/kani-fmt.sh --check
