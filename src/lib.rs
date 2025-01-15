@@ -17,7 +17,6 @@ mod os_hacks;
 mod setup;
 
 use std::ffi::OsString;
-use std::os::unix::prelude::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
@@ -149,7 +148,7 @@ fn exec(bin: &str) -> Result<()> {
     set_kani_rust_toolchain(&kani_dir)?;
 
     let mut cmd = Command::new(program);
-    cmd.args(env::args_os().skip(1)).env("PYTHONPATH", pythonpath).env("PATH", path).arg0(bin);
+    cmd.arg(bin).args(env::args_os().skip(1)).env("PYTHONPATH", pythonpath).env("PATH", path);
 
     let result = cmd.status().context("Failed to invoke kani-driver")?;
 
