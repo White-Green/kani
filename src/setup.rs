@@ -238,6 +238,9 @@ fn symlink_rust_toolchain(toolchain: &Path, kani_dir: &Path) -> Result<()> {
     if path.exists() && path.is_symlink() {
         std::fs::remove_file(&path)?;
     }
+    #[cfg(unix)]
     std::os::unix::fs::symlink(toolchain, path)?;
+    #[cfg(windows)]
+    std::os::windows::fs::symlink_dir(toolchain, path)?;
     Ok(())
 }
