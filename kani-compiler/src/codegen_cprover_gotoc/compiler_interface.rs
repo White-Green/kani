@@ -468,14 +468,17 @@ fn check_target(session: &Session) {
     // looking for `arm64-apple-*`
     let is_arm64_darwin_target = session.target.llvm_target.starts_with("arm64-apple-");
 
+    let is_x86_64_windows_target = session.target.llvm_target == "x86_64-pc-windows-msvc";
+
     if !is_x86_64_linux_target
         && !is_arm64_linux_target
         && !is_x86_64_darwin_target
         && !is_arm64_darwin_target
+        && !is_x86_64_windows_target
     {
         let err_msg = format!(
             "Kani requires the target platform to be `x86_64-unknown-linux-gnu`, \
-            `aarch64-unknown-linux-gnu`, `x86_64-apple-*` or `arm64-apple-*`, but \
+            `aarch64-unknown-linux-gnu`, `x86_64-apple-*`, `arm64-apple-*` or `x86_64-pc-windows-msvc` but \
             it is {}",
             &session.target.llvm_target
         );
