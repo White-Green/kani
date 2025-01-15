@@ -30,7 +30,6 @@ use rustc_demangle::demangle;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use std::env;
-use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, ChildStdout};
@@ -539,16 +538,21 @@ pub async fn process_cbmc_output(
     // This will get us the process's exit code
     let status = process.wait().await?;
 
-    let process_status = match (status.code(), status.signal()) {
+    let process_status = if let Some(x) = status.code() {
         // normal unix exit codes (cbmc uses currently 0-10)
         // https://github.com/diffblue/cbmc/blob/develop/src/util/exit_codes.h
-        (Some(x), _) => x,
-        // process exited with signal (e.g. OOM-killed)
-        // bash/zsh have a convention for translating signal number to exit code:
-        // https://tldp.org/LDP/abs/html/exitcodes.html
-        (_, Some(x)) => 128 + x,
-        // I think this shouldn't happen? either exit or signal, right?
-        (None, None) => unreachable!("Process exited with neither status code nor signal?"),
+        x
+    } else {
+        #[cfg(unix)]
+        let Some(x) = std::os::unix::process::ExitStatusExt::signal(&status) else {
+            // I think this shouldn't happen? either exit or signal, right?
+            unreachable!("Process exited with neither status code nor signal?");
+        };
+        #[cfg(windows)]
+        // On Windows, status.code() should never be None since Windows processes
+        // always return an exit code (even in abnormal termination cases).
+        let x = unreachable!("Process exited with no status code.");
+        x
     };
 
     Ok(VerificationOutput { process_status, processed_items })
