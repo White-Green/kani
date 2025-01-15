@@ -31,7 +31,9 @@ for suite in "${TESTS[@]}"; do
     set +f; unset IFS
     # Note: We set the configuration file here because some submodules have
     # their own configuration file.
-    rustfmt --unstable-features "$@" --config-path rustfmt.toml "${files[@]}" || error=1
+    cat<<EOF
+rustfmt --unstable-features "$@" --config-path rustfmt.toml "${files[@]}" || error=1
+EOF
 done
 
 exit $error
