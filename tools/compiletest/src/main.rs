@@ -53,7 +53,12 @@ fn add_kani_to_path() {
     let kani_scripts = cwd.join("scripts");
     env::set_var(
         "PATH",
-        format!("{}:{}:{}", kani_scripts.display(), kani_bin.display(), env::var("PATH").unwrap()),
+        env::join_paths(
+            [kani_scripts, kani_bin]
+                .into_iter()
+                .chain(env::split_paths(&env::var("PATH").unwrap())),
+        )
+        .unwrap(),
     );
 }
 
