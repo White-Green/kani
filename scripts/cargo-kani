@@ -18,4 +18,4 @@ then
     exit 1
 fi
 
-exec -a cargo-kani "${KANI_DRIVER}" "$@"
+exec "${KANI_DRIVER}" cargo-kani "$@"

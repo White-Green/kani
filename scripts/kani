@@ -18,4 +18,4 @@ then
     exit 1
 fi
 
-exec -a kani "${KANI_DRIVER}" "$@"
+exec "${KANI_DRIVER}" kani "$@"
