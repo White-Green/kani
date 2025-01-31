@@ -188,6 +188,7 @@ impl KaniSession {
     /// Note: Takes `self` "by ownership". This function wants to be able to drop before
     /// exiting with an error code, if needed.
     pub(crate) fn print_final_summary(self, results: &[HarnessResult<'_>]) -> Result<()> {
+        dbg!(&self);
         let (successes, failures): (Vec<_>, Vec<_>) =
             results.iter().partition(|r| r.result.status == VerificationStatus::Success);
 
