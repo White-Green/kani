@@ -76,7 +76,7 @@ for testp in "${TESTS[@]}"; do
   suite=${testl[0]}
   mode=${testl[1]}
   echo "Check compiletest suite=$suite mode=$mode"
-  cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+  RUST_LOG=debug cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
       --quiet --no-fail-fast
 done
 
