@@ -329,7 +329,8 @@ impl TestCx<'_> {
         // 1. It calls rustc instead of Kani
         // 2. It may pass some options that do not make sense for Kani
         // So we create our own command to execute Kani and pass it to self.compose_and_run(...) directly.
-        let mut kani = Command::new("kani");
+        let mut kani = Command::new("sh");
+        kani.arg("-c").arg("kani");
         // We cannot pass rustc flags directly to Kani. Instead, we add them
         // to the current environment through the `RUSTFLAGS` environment
         // variable. Kani recognizes the variable and adds those flags to its
