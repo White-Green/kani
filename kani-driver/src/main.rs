@@ -44,7 +44,7 @@ mod version;
 /// The driver can be invoked via `cargo kani` and `kani` commands, which determines what kind of
 /// project should be verified.
 fn main() -> ExitCode {
-    let invocation_type = determine_invocation_type(Vec::from_iter(std::env::args_os()));
+    let invocation_type = determine_invocation_type(Vec::from_iter(std::env::args_os().skip(1)));
 
     let result = match invocation_type {
         InvocationType::CargoKani(args) => cargokani_main(args),
