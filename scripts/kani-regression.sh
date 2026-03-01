@@ -25,7 +25,11 @@ source "${KANI_DIR}/kani-dependencies"
     (echo "Conflicting CBMC versions"; exit 1)
 # Check if installed versions are correct.
 check-cbmc-version.py --major ${CBMC_MAJOR} --minor ${CBMC_MINOR}
-check_kissat_version.sh
+if [[ "$OSTYPE" != "msys" ]]; then
+  check_kissat_version.sh
+else
+  echo "Warning: Kissat version check skipped on Windows"
+fi
 
 # Formatting check
 ${SCRIPT_DIR}/kani-fmt.sh --check
