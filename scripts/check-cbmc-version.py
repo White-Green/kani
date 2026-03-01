@@ -15,10 +15,14 @@ EXIT_CODE_FAIL = 2
 
 
 def get_version(tool_str):
+    if sys.platform == "win32":
+        tool_str += ".exe"
     cmd = [tool_str, "--version"]
     try:
+        # On Windows, we need shell=True to find the executable if it's in the PATH
+        # or we need to provide the .exe extension.
         version = subprocess.run(cmd, stdout=PIPE, stderr=PIPE, check=True,
-                                 universal_newlines=True)
+                                 universal_newlines=True, shell=(sys.platform == "win32"))
     except (OSError, subprocess.SubprocessError) as error:
         print(error)
         print(f"Can't run command '{' '.join(cmd)}'")

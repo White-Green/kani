@@ -25,7 +25,13 @@ unzip -o -j "cvc5-${ARCH}-static.zip" "cvc5-${ARCH}-static/bin/cvc5.exe"
 mkdir -p /usr/local/bin
 mv cvc5.exe /usr/local/bin/
 rm "cvc5-${ARCH}-static.zip"
-cvc5.exe --version
+# Add paths to GITHUB_PATH if running in CI
+if [[ -n "${GITHUB_PATH:-}" ]]; then
+  echo "C:\ProgramData\chocolatey\bin" >> "$GITHUB_PATH"
+  echo "C:\Program Files\CBMC\bin" >> "$GITHUB_PATH"
+  echo "/usr/local/bin" >> "$GITHUB_PATH"
+fi
+/usr/local/bin/cvc5.exe --version
 
 # Kissat is currently skipped for Windows ARM
 echo "Warning: Kissat installation skipped for Windows ARM"
