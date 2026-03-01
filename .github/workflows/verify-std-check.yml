@@ -27,8 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Kani does not support windows.
-        os: [ ubuntu-22.04, macos-14 ]
+        os: [ ubuntu-22.04, macos-14, windows-2025, windows-11-arm ]
     steps:
       - name: Checkout Library
         uses: actions/checkout@v6
@@ -100,4 +99,3 @@ jobs:
           echo "HEAD: ${{ steps.check-head.outcome }}"
           echo "BASE: ${{ steps.check-base.outcome }}"
           exit 1
-

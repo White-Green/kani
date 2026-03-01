@@ -114,12 +114,58 @@ jobs:
         with:
           platform: aarch64-unknown-linux-gnu
 
+  build_bundle_windows_x86_64:
+    name: BuildBundle-Windows-x86_64
+    runs-on: windows-2025
+    outputs:
+      version: ${{ steps.bundle.outputs.version }}
+      bundle: ${{ steps.bundle.outputs.bundle }}
+      package: ${{ steps.bundle.outputs.package }}
+      crate_version: ${{ steps.bundle.outputs.crate_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Kani Dependencies
+        uses: ./.github/actions/setup
+        with:
+          os: windows-2025
+
+      - name: Build bundle
+        id: bundle
+        uses: ./.github/actions/build-bundle
+        with:
+          platform: x86_64-pc-windows-msvc
+
+  build_bundle_windows_aarch64:
+    name: BuildBundle-Windows-aarch64
+    runs-on: windows-11-arm
+    outputs:
+      version: ${{ steps.bundle.outputs.version }}
+      bundle: ${{ steps.bundle.outputs.bundle }}
+      package: ${{ steps.bundle.outputs.package }}
+      crate_version: ${{ steps.bundle.outputs.crate_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Kani Dependencies
+        uses: ./.github/actions/setup
+        with:
+          os: windows-11-arm
+
+      - name: Build bundle
+        id: bundle
+        uses: ./.github/actions/build-bundle
+        with:
+          platform: aarch64-pc-windows-msvc
+
   test-use-local-toolchain:
     name: TestLocalToolchain
-    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64]
+    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64, build_bundle_windows_x86_64, build_bundle_windows_aarch64]
     strategy:
       matrix:
-        os: [macos-15-intel, macos-14, ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm]
+        os: [macos-15-intel, macos-14, ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm, windows-2025, windows-11-arm]
         include:
         - os: macos-15-intel
           rust_target: x86_64-apple-darwin
@@ -136,6 +182,12 @@ jobs:
         - os: ubuntu-24.04-arm
           rust_target: aarch64-unknown-linux-gnu
           prev_job: ${{ needs.build_bundle_linux_aarch64.outputs }}
+        - os: windows-2025
+          rust_target: x86_64-pc-windows-msvc
+          prev_job: ${{ needs.build_bundle_windows_x86_64.outputs }}
+        - os: windows-11-arm
+          rust_target: aarch64-pc-windows-msvc
+          prev_job: ${{ needs.build_bundle_windows_aarch64.outputs }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download bundle
@@ -222,10 +274,10 @@ jobs:
 
   test_bundle:
     name: TestBundle
-    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64]
+    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64, build_bundle_windows_x86_64, build_bundle_windows_aarch64]
     strategy:
       matrix:
-        os: [macos-15-intel, macos-14, ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm]
+        os: [macos-15-intel, macos-14, ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm, windows-2025, windows-11-arm]
         include:
           # Stores the output of the previous job conditional to the OS
           - prev_job: ${{ needs.build_bundle_linux_x86_64.outputs }}
@@ -235,6 +287,10 @@ jobs:
             prev_job: ${{ needs.build_bundle_macos_aarch64.outputs }}
           - os: ubuntu-24.04-arm
             prev_job: ${{ needs.build_bundle_linux_aarch64.outputs }}
+          - os: windows-2025
+            prev_job: ${{ needs.build_bundle_windows_x86_64.outputs }}
+          - os: windows-11-arm
+            prev_job: ${{ needs.build_bundle_windows_aarch64.outputs }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download bundle
@@ -276,7 +332,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64, test_bundle]
+    needs: [build_bundle_macos_x86_64, build_bundle_macos_aarch64, build_bundle_linux_x86_64, build_bundle_linux_aarch64, build_bundle_windows_x86_64, build_bundle_windows_aarch64, test_bundle]
     outputs:
       version: ${{ steps.versioning.outputs.version }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -321,6 +377,16 @@ jobs:
         with:
           name: ${{ needs.build_bundle_linux_aarch64.outputs.bundle }}
 
+      - name: Download Windows bundle
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build_bundle_windows_x86_64.outputs.bundle }}
+
+      - name: Download Windows Arm bundle
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build_bundle_windows_aarch64.outputs.bundle }}
+
       - name: Create release
         id: create_release
         uses: ncipollo/release-action@v1.20.0
@@ -329,7 +395,7 @@ jobs:
         with:
           name: kani-${{ env.TAG_VERSION }}
           tag: kani-${{ env.TAG_VERSION }}
-          artifacts: "${{ needs.build_bundle_linux_x86_64.outputs.bundle }},${{ needs.build_bundle_linux_aarch64.outputs.bundle }},${{ needs.build_bundle_macos_x86_64.outputs.bundle }},${{ needs.build_bundle_macos_aarch64.outputs.bundle }}"
+          artifacts: "${{ needs.build_bundle_linux_x86_64.outputs.bundle }},${{ needs.build_bundle_linux_aarch64.outputs.bundle }},${{ needs.build_bundle_macos_x86_64.outputs.bundle }},${{ needs.build_bundle_macos_aarch64.outputs.bundle }},${{ needs.build_bundle_windows_x86_64.outputs.bundle }},${{ needs.build_bundle_windows_aarch64.outputs.bundle }}"
           body: |
             Kani Rust verifier release bundle version ${{ env.TAG_VERSION }}.
           draft: true

@@ -25,8 +25,13 @@ runs:
       - name: Install Rust toolchain
         run: |
           cd ${{ inputs.kani_dir }}
-          ./scripts/setup/install_rustup.sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            # Windows already has rustup, just install the toolchain
+            rustup toolchain install
+          else
+            ./scripts/setup/install_rustup.sh
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
         shell: bash
 
       - name: Install dependencies
