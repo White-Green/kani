@@ -24,28 +24,42 @@ source "${KANI_DIR}/kani-dependencies"
 [[ "${CBMC_MAJOR}.${CBMC_MINOR}" == "${CBMC_VERSION%.*}" ]] || \
     (echo "Conflicting CBMC versions"; exit 1)
 # Check if installed versions are correct.
-check-cbmc-version.py --major ${CBMC_MAJOR} --minor ${CBMC_MINOR}
-if [[ "$OSTYPE" != "msys" ]]; then
+echo "OSTYPE is: $OSTYPE"
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+  echo "Running on Windows ($OSTYPE)"
+  # On Windows, python3 might not be in the path, but python is
+  PYTHON_BIN=$(command -v python3 || command -v python || echo "python")
+  echo "Using python: $PYTHON_BIN"
+  $PYTHON_BIN "${SCRIPT_DIR}/check-cbmc-version.py" --major "${CBMC_MAJOR}" --minor "${CBMC_MINOR}"
+else
+  check-cbmc-version.py --major "${CBMC_MAJOR}" --minor "${CBMC_MINOR}"
+fi
+if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "win32" ]]; then
   check_kissat_version.sh
 else
   echo "Warning: Kissat version check skipped on Windows"
 fi
 
 # Formatting check
+echo "Running Formatting check..."
 ${SCRIPT_DIR}/kani-fmt.sh --check
 
 # Build kani
+echo "Building Kani..."
 cargo build-dev
 
 # Unit tests
+echo "Running Unit tests..."
 cargo test -p cprover_bindings
 cargo test -p kani-compiler
 cargo test -p kani-driver
 cargo test -p kani_metadata
 # Use concrete playback to enable assertions failure
+echo "Running kani crate tests..."
 cargo test -p kani --features concrete_playback
 # Test the actual macros, skipping doc tests and enabling extra traits for "syn"
 # so we can debug print AST
+echo "Running kani_macros tests..."
 RUSTFLAGS=--cfg=kani_sysroot cargo test -p kani_macros --features syn/extra-traits --lib
 
 # Declare testing suite information (suite and mode)
@@ -72,6 +86,7 @@ cargo run -p compiletest --quiet -- --suite kani --mode cargo-kani --dry-run --v
 echo "-----------------------------"
 
 # Build `kani-cov`
+echo "Building kani-cov..."
 cargo build -p kani-cov
 
 # Extract testing suite information and run compiletest
@@ -93,10 +108,12 @@ if [ -d "$KANI_DIR/firecracker/build" ]; then
 fi
 
 # Check codegen of firecracker
+echo "Checking codegen of firecracker..."
 time "$SCRIPT_DIR"/codegen-firecracker.sh
 
 # Test for --manifest-path which we cannot do through compiletest.
 # It should just successfully find the project and specified proof harness. (Then clean up.)
+echo "Testing --manifest-path..."
 FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
 cargo kani --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
 cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
@@ -111,6 +128,7 @@ cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 # detect any warnings in the charon code path. TODO: Remove
 # `--no-default-features --features cprover` when the warnings in charon are
 # fixed and we advance the charon pin to that version
+echo "Final build with warnings check..."
 RUSTFLAGS="-D warnings" cargo build --target-dir /tmp/kani_build_warnings --no-default-features --features cprover
 
 echo
