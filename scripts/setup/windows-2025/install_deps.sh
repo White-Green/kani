@@ -65,7 +65,7 @@ echo "Installing CMake..."
 choco install -y cmake --no-progress || { echo "CMake installation failed"; exit 1; }
 
 # Install cvc5 (no choco package for version 1.3.0)
-ARCH="Win64"
+ARCH="Win64-x86_64"
 CVC5_VERSION="1.3.0"
 CVC5_URL="https://github.com/cvc5/cvc5/releases/download/cvc5-${CVC5_VERSION}/cvc5-${ARCH}-static.zip"
 curl -L --remote-name "${CVC5_URL}"
