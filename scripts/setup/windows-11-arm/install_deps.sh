@@ -59,6 +59,12 @@ if [[ ${MSI_EXIT_CODE} -ne 0 ]]; then
 fi
 rm "${CBMC_INSTALLER}"
 
+CBMC_BIN_DIR_WIN="C:\\Program Files\\CBMC\\bin"
+CBMC_BIN_DIR_MSYS="$(cygpath -u "${CBMC_BIN_DIR_WIN}")"
+if [[ -d "${CBMC_BIN_DIR_MSYS}" ]]; then
+  export PATH="${CBMC_BIN_DIR_MSYS}:$PATH"
+fi
+
 echo "Installing Z3..."
 choco install -y z3 --no-progress || { echo "Z3 installation failed"; exit 1; }
 echo "Installing CMake..."
@@ -78,11 +84,12 @@ rm "cvc5-${ARCH}-static.zip"
 # Add paths to GITHUB_PATH if running in CI
 if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
+  echo "C:\\Program Files\\CBMC\\bin" >> "$GITHUB_PATH"
   echo "C:\\msys64\\usr\\local\\bin" >> "$GITHUB_PATH"
   echo "Successfully updated GITHUB_PATH"
 fi
 /usr/local/bin/cvc5.exe --version
-/usr/local/bin/cbmc.exe --version
+cbmc.exe --version
 where cbmc.exe || echo "cbmc.exe not found in PATH"
 
 # Kissat is currently skipped for Windows ARM
