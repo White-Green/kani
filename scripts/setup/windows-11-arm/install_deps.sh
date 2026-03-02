@@ -62,7 +62,9 @@ rm "${CBMC_INSTALLER}"
 echo "Installing Z3..."
 choco install -y z3 --no-progress || { echo "Z3 installation failed"; exit 1; }
 echo "Installing CMake..."
-choco install -y cmake --no-progress || { echo "CMake installation failed"; exit 1; }
+# On Windows ARM runners, the MSI-based cmake.install dependency can fail with
+# generic MSI errors (1603). Use the portable package to avoid MSI.
+choco install -y cmake.portable --no-progress || { echo "CMake portable installation failed"; exit 1; }
 
 # cvc5 - we'll try the x64 binary for now as there's no native Windows ARM64 binary.
 ARCH="Win64-x86_64"
