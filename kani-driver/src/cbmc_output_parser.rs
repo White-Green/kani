@@ -30,6 +30,7 @@ use rustc_demangle::demangle;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use std::env;
+#[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -547,6 +548,7 @@ pub async fn process_cbmc_output(
     // This will get us the process's exit code
     let status = process.wait().await?;
 
+    #[cfg(unix)]
     let process_status = match (status.code(), status.signal()) {
         // normal unix exit codes (cbmc uses currently 0-10)
         // https://github.com/diffblue/cbmc/blob/develop/src/util/exit_codes.h
@@ -558,6 +560,9 @@ pub async fn process_cbmc_output(
         // I think this shouldn't happen? either exit or signal, right?
         (None, None) => unreachable!("Process exited with neither status code nor signal?"),
     };
+
+    #[cfg(not(unix))]
+    let process_status = status.code().expect("Process exited without a status code");
 
     Ok(VerificationOutput { process_status, processed_items })
 }
