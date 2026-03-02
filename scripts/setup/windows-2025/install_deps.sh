@@ -18,7 +18,19 @@ echo "Installing CBMC..."
 CBMC_INSTALLER="cbmc-${CBMC_VERSION}-win64.msi"
 CBMC_URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/${CBMC_INSTALLER}"
 curl -L --remote-name "${CBMC_URL}"
-msiexec.exe /i "${CBMC_INSTALLER}" /qn /norestart
+MSI_LOG="cbmc-install.log"
+echo "Installing ${CBMC_INSTALLER} silently (log: ${MSI_LOG})..."
+cmd.exe //c "msiexec /i \"${CBMC_INSTALLER}\" /qn /norestart /l*v \"${MSI_LOG}\""
+MSI_EXIT_CODE=$?
+if [[ ${MSI_EXIT_CODE} -ne 0 ]]; then
+  echo "CBMC MSI installation failed with exit code ${MSI_EXIT_CODE}"
+  if [[ -f "${MSI_LOG}" ]]; then
+    echo "--- Begin ${MSI_LOG} (tail) ---"
+    tail -n 200 "${MSI_LOG}" || true
+    echo "--- End ${MSI_LOG} (tail) ---"
+  fi
+  exit ${MSI_EXIT_CODE}
+fi
 rm "${CBMC_INSTALLER}"
 
 echo "Installing Z3..."
