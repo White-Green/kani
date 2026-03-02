@@ -336,6 +336,14 @@ impl CodegenBackend for GotocCodegenBackend {
             // See [QueryDb::kani_functions] for more information.
             let queries = QUERY_DB.with(|db| db.borrow().clone());
 
+            // When Kani is invoked to compile dependency crates (e.g., while building the
+            // sysroot), we don't perform verification codegen and should not enforce
+            // verification-target restrictions.
+            if queries.args().reachability_analysis == ReachabilityType::None {
+                let results = GotoCodegenResults::new(tcx, ReachabilityType::None);
+                return codegen_results(tcx, &results.machine_model);
+            }
+
             check_target(tcx.sess);
             check_options(tcx.sess);
             if queries.args().reachability_analysis != ReachabilityType::None
@@ -370,11 +378,6 @@ impl CodegenBackend for GotocCodegenBackend {
             let base_filename = base_filepath.as_path();
             let reachability = queries.args().reachability_analysis;
             let mut results = GotoCodegenResults::new(tcx, reachability);
-
-            // If reachability is None, just return early as we'll do no codegen.
-            if reachability == ReachabilityType::None {
-                return codegen_results(tcx, &results.machine_model);
-            }
 
             // Create an empty thread pool. We will set the size later once we
             // concretely know the # of harnesses we need to analyze.
