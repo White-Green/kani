@@ -18,18 +18,19 @@ echo "Installing CBMC..."
 CBMC_INSTALLER="cbmc-${CBMC_VERSION}-win64.msi"
 CBMC_URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/${CBMC_INSTALLER}"
 curl -L --remote-name "${CBMC_URL}"
+CBMC_INSTALLER_WIN="$(cygpath -w "$(pwd)/${CBMC_INSTALLER}")"
 MSI_LOG_WIN="${RUNNER_TEMP:-${TEMP:-C:\\Windows\\Temp}}\\cbmc-install.log"
 MSI_LOG_MSYS="$(cygpath -u "${MSI_LOG_WIN}")"
 mkdir -p "$(dirname "${MSI_LOG_MSYS}")"
 echo "Installing ${CBMC_INSTALLER} silently (log: ${MSI_LOG_WIN})..."
 set +e
-cmd.exe //c "msiexec /i \"${CBMC_INSTALLER}\" /qn /norestart /l*v \"${MSI_LOG_WIN}\""
+cmd.exe //c "msiexec /i \"${CBMC_INSTALLER_WIN}\" /qn /norestart /l*v \"${MSI_LOG_WIN}\""
 MSI_EXIT_CODE=$?
 set -e
 if [[ ${MSI_EXIT_CODE} -eq 86 ]]; then
   echo "Warning: Failed to open MSI log file (${MSI_LOG_WIN}). Retrying without /l*v..."
   set +e
-  cmd.exe //c "msiexec /i \"${CBMC_INSTALLER}\" /qn /norestart"
+  cmd.exe //c "msiexec /i \"${CBMC_INSTALLER_WIN}\" /qn /norestart"
   MSI_EXIT_CODE=$?
   set -e
 fi
