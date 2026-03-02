@@ -39,14 +39,13 @@ for ignore in "${IGNORE[@]}"; do
 done
 
 for suite in "${TESTS[@]}"; do
-    # Find uses breakline to split between files. This ensures that we can
-    # handle files with space in their path.
-    set -f; IFS=$'\n'
-    files=($(find "${suite}" -name "*.rs" ${IGNORE_ARGS[@]}))
-    set +f; unset IFS
     # Note: We set the configuration file here because some submodules have
     # their own configuration file.
-    rustfmt --config-path rustfmt.toml ${check_flag} "${files[@]}" || error=1
+    # Run rustfmt file-by-file to avoid hitting command-line length limits on
+    # Windows runners.
+    while IFS= read -r -d '' file; do
+        rustfmt --config-path rustfmt.toml ${check_flag} "$file" || error=1
+    done < <(find "${suite}" -name "*.rs" ${IGNORE_ARGS[@]} -print0)
 done
 
 exit $error
