@@ -136,6 +136,9 @@ fn fail_if_in_dev_environment() -> Result<()> {
 /// Executes `kani-driver` in `bin` mode (kani or cargo-kani)
 /// augmenting environment variables to accomodate our release environment
 fn exec(bin: &str) -> Result<()> {
+    #[cfg(not(unix))]
+    let _ = bin;
+
     let kani_dir = setup::kani_dir()?;
     let program = kani_dir.join("bin").join("kani-driver");
     let pyroot = kani_dir.join("pyroot");
