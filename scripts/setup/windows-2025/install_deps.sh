@@ -18,16 +18,17 @@ echo "Installing CBMC..."
 CBMC_INSTALLER="cbmc-${CBMC_VERSION}-win64.msi"
 CBMC_URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/${CBMC_INSTALLER}"
 curl -L --remote-name "${CBMC_URL}"
-MSI_LOG="cbmc-install.log"
-echo "Installing ${CBMC_INSTALLER} silently (log: ${MSI_LOG})..."
-cmd.exe //c "msiexec /i \"${CBMC_INSTALLER}\" /qn /norestart /l*v \"${MSI_LOG}\""
+MSI_LOG_WIN="${RUNNER_TEMP:-${TEMP:-C:\\Windows\\Temp}}\\cbmc-install.log"
+MSI_LOG_MSYS="$(cygpath -u "${MSI_LOG_WIN}")"
+echo "Installing ${CBMC_INSTALLER} silently (log: ${MSI_LOG_WIN})..."
+cmd.exe //c "msiexec /i \"${CBMC_INSTALLER}\" /qn /norestart /l*v \"${MSI_LOG_WIN}\""
 MSI_EXIT_CODE=$?
 if [[ ${MSI_EXIT_CODE} -ne 0 ]]; then
   echo "CBMC MSI installation failed with exit code ${MSI_EXIT_CODE}"
-  if [[ -f "${MSI_LOG}" ]]; then
-    echo "--- Begin ${MSI_LOG} (tail) ---"
-    tail -n 200 "${MSI_LOG}" || true
-    echo "--- End ${MSI_LOG} (tail) ---"
+  if [[ -f "${MSI_LOG_MSYS}" ]]; then
+    echo "--- Begin ${MSI_LOG_WIN} (tail) ---"
+    tail -n 200 "${MSI_LOG_MSYS}" || true
+    echo "--- End ${MSI_LOG_WIN} (tail) ---"
   fi
   exit ${MSI_EXIT_CODE}
 fi
