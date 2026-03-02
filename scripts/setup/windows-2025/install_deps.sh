@@ -15,11 +15,11 @@ source kani-dependencies
 # Use -y to bypass prompts
 # Install CBMC using GitHub release
 echo "Installing CBMC..."
-CBMC_ARCH="win64"
-CBMC_URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/cbmc-v${CBMC_VERSION}-${CBMC_ARCH}.zip"
+CBMC_INSTALLER="cbmc-${CBMC_VERSION}-win64.msi"
+CBMC_URL="https://github.com/diffblue/cbmc/releases/download/cbmc-${CBMC_VERSION}/${CBMC_INSTALLER}"
 curl -L --remote-name "${CBMC_URL}"
-unzip -o -j "cbmc-v${CBMC_VERSION}-${CBMC_ARCH}.zip" "*/bin/*.exe" -d /usr/local/bin
-rm "cbmc-v${CBMC_VERSION}-${CBMC_ARCH}.zip"
+msiexec.exe /i "${CBMC_INSTALLER}" /qn /norestart
+rm "${CBMC_INSTALLER}"
 
 echo "Installing Z3..."
 choco install -y z3 --no-progress || { echo "Z3 installation failed"; exit 1; }
