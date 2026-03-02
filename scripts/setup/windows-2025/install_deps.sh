@@ -23,16 +23,30 @@ MSI_LOG_WIN="${RUNNER_TEMP:-${TEMP:-C:\\Windows\\Temp}}\\cbmc-install.log"
 MSI_LOG_MSYS="$(cygpath -u "${MSI_LOG_WIN}")"
 mkdir -p "$(dirname "${MSI_LOG_MSYS}")"
 echo "Installing ${CBMC_INSTALLER} silently (log: ${MSI_LOG_WIN})..."
+run_msi() {
+  local log_file="$1"
+  set +e
+  if [[ -n "${log_file}" ]]; then
+    powershell.exe -NoProfile -NonInteractive -Command "\
+      \$p = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i','${CBMC_INSTALLER_WIN}','/qn','/norestart','/l*v','${log_file}') -Wait -PassThru; \
+      exit \$p.ExitCode"
+  else
+    powershell.exe -NoProfile -NonInteractive -Command "\
+      \$p = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i','${CBMC_INSTALLER_WIN}','/qn','/norestart') -Wait -PassThru; \
+      exit \$p.ExitCode"
+  fi
+  local exit_code=$?
+  set -e
+  return ${exit_code}
+}
+
 set +e
-cmd.exe //c "msiexec /i \"${CBMC_INSTALLER_WIN}\" /qn /norestart /l*v \"${MSI_LOG_WIN}\""
+run_msi "${MSI_LOG_WIN}"
 MSI_EXIT_CODE=$?
-set -e
 if [[ ${MSI_EXIT_CODE} -eq 86 ]]; then
   echo "Warning: Failed to open MSI log file (${MSI_LOG_WIN}). Retrying without /l*v..."
-  set +e
-  cmd.exe //c "msiexec /i \"${CBMC_INSTALLER_WIN}\" /qn /norestart"
+  run_msi ""
   MSI_EXIT_CODE=$?
-  set -e
 fi
 if [[ ${MSI_EXIT_CODE} -ne 0 ]]; then
   echo "CBMC MSI installation failed with exit code ${MSI_EXIT_CODE}"
