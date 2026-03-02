@@ -39,6 +39,11 @@ fn lib_extension() -> &'static str {
     "dylib"
 }
 
+#[cfg(target_os = "windows")]
+fn lib_extension() -> &'static str {
+    "dll"
+}
+
 /// Returns the path to Kani sysroot. I.e.: folder where we store pre-compiled binaries and
 /// libraries.
 pub fn kani_sysroot() -> PathBuf {
