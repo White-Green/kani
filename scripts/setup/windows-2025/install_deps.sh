@@ -11,10 +11,14 @@ source kani-dependencies
 # Install dependencies using Chocolatey
 # GitHub Actions Windows runner has choco pre-installed
 # Use -y to bypass prompts
-choco install -y cbmc --version ${CBMC_VERSION}
-choco install -y z3
-choco install -y cmake
-choco install -y unzip
+echo "Installing CBMC..."
+choco install -y cbmc --version ${CBMC_VERSION} --no-progress
+echo "Installing Z3..."
+choco install -y z3 --no-progress
+echo "Installing CMake..."
+choco install -y cmake --no-progress
+echo "Installing Unzip..."
+choco install -y unzip --no-progress
 
 # Install cvc5 (no choco package for version 1.3.0)
 ARCH="Win64"
@@ -31,8 +35,10 @@ if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "C:\ProgramData\chocolatey\bin" >> "$GITHUB_PATH"
   echo "C:\Program Files\CBMC\bin" >> "$GITHUB_PATH"
   echo "/usr/local/bin" >> "$GITHUB_PATH"
+  echo "Successfully updated GITHUB_PATH"
 fi
 /usr/local/bin/cvc5.exe --version
+ls -l "C:\Program Files\CBMC\bin\cbmc.exe" || echo "cbmc.exe not found in expected location"
 
 # Kissat is currently skipped for Windows as it requires a complex build setup
 # or a specific Windows port.

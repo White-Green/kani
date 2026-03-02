@@ -21,9 +21,14 @@ def get_version(tool_str):
     try:
         # On Windows, we need shell=True to find the executable if it's in the PATH
         # or we need to provide the .exe extension.
-        version = subprocess.run(cmd, stdout=PIPE, stderr=PIPE, check=True,
+        version = subprocess.run(cmd, stdout=PIPE, stderr=PIPE, check=False,
                                  universal_newlines=True, shell=(sys.platform == "win32"))
-    except (OSError, subprocess.SubprocessError) as error:
+        if version.returncode != 0:
+            print(f"Command '{' '.join(cmd)}' failed with return code {version.returncode}")
+            print(f"Stdout: {version.stdout}")
+            print(f"Stderr: {version.stderr}")
+            sys.exit(EXIT_CODE_FAIL)
+    except OSError as error:
         print(error)
         print(f"Can't run command '{' '.join(cmd)}'")
         sys.exit(EXIT_CODE_FAIL)
