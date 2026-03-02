@@ -45,7 +45,7 @@ for suite in "${TESTS[@]}"; do
     # Windows runners.
     while IFS= read -r -d '' file; do
         rustfmt --config-path rustfmt.toml ${check_flag} "$file" || error=1
-    done < <(find "${suite}" -name "*.rs" ${IGNORE_ARGS[@]} -print0)
+    done < <(find "${suite}" -name "*.rs" "${IGNORE_ARGS[@]}" -print0)
 done
 
 exit $error
