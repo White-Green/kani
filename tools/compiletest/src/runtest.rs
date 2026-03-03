@@ -42,6 +42,11 @@ fn disable_error_reporting<F: FnOnce() -> R, R>(f: F) -> R {
     f()
 }
 
+#[cfg(windows)]
+fn disable_error_reporting<F: FnOnce() -> R, R>(f: F) -> R {
+    f()
+}
+
 /// The name of the environment variable that holds dynamic library locations.
 pub fn dylib_env_var() -> &'static str {
     if cfg!(target_os = "macos") { "DYLD_LIBRARY_PATH" } else { "LD_LIBRARY_PATH" }

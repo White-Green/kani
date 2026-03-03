@@ -25,7 +25,7 @@ pub fn read2(mut child: Child) -> io::Result<Output> {
     Ok(Output { status, stdout, stderr })
 }
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(unix))]
 mod imp {
     use std::io::{self, Read};
     use std::process::{ChildStderr, ChildStdout};
