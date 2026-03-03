@@ -116,6 +116,11 @@ fn parse_args(args: Vec<OsString>) -> ArgsResult {
 /// hundreds of HTTP requests trying to download a non-existent release bundle.
 /// So if we positively detect a dev environment, raise an error early.
 fn fail_if_in_dev_environment() -> Result<()> {
+    #[cfg(windows)]
+    {
+        return Ok(());
+    }
+
     // Don't collapse if as let_chains have only been stabilized in 1.88, which the target host
     // installing Kani need not have just yet.
     #[allow(clippy::collapsible_if)]
