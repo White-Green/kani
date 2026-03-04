@@ -356,11 +356,11 @@ impl InstallType {
             Self::DevRepo(_) => {
                 // Use bin_folder to hide debug/release differences.
                 let path = bin_folder()?.join("kani-compiler");
-                expect_path(path)
+                expect_binary_path(path)
             }
             Self::Release(release) => {
                 let path = release.join("bin/kani-compiler");
-                expect_path(path)
+                expect_binary_path(path)
             }
         }
     }
@@ -390,6 +390,22 @@ fn expect_path(path: PathBuf) -> Result<PathBuf> {
             path.display()
         );
     }
+}
+
+fn expect_binary_path(path: PathBuf) -> Result<PathBuf> {
+    #[cfg(windows)]
+    {
+        if path.exists() {
+            return Ok(path);
+        }
+
+        let path_with_ext = path.with_extension("exe");
+        if path_with_ext.exists() {
+            return Ok(path_with_ext);
+        }
+    }
+
+    expect_path(path)
 }
 
 /// Initialize the logger using the KANI_LOG environment variable and `--debug` argument.
