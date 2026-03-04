@@ -26,6 +26,25 @@ use serde::{Deserialize, Serialize};
 use tracing::*;
 use wait_timeout::ChildExt;
 
+#[cfg(windows)]
+fn kani_command() -> Command {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let repo_root = manifest_dir
+        .parent()
+        .and_then(Path::parent)
+        .expect("tools/compiletest is expected to be under repository root");
+    let script = repo_root.join("scripts").join("kani");
+
+    let mut cmd = Command::new("bash");
+    cmd.arg(script);
+    cmd
+}
+
+#[cfg(not(windows))]
+fn kani_command() -> Command {
+    Command::new("kani")
+}
+
 /// Configurations for `exec` tests
 #[derive(Debug, Serialize, Deserialize)]
 struct ExecConfig {
@@ -300,7 +319,7 @@ impl TestCx<'_> {
         // 1. It calls rustc instead of Kani
         // 2. It may pass some options that do not make sense for Kani
         // So we create our own command to execute Kani and pass it to self.compose_and_run(...) directly.
-        let mut kani = Command::new("kani");
+        let mut kani = kani_command();
         // We cannot pass rustc flags directly to Kani. Instead, we add them
         // to the current environment through the `RUSTFLAGS` environment
         // variable. Kani recognizes the variable and adds those flags to its
@@ -321,7 +340,7 @@ impl TestCx<'_> {
 
     /// Run Kani with coverage enabled on a single source file
     fn run_kani_with_coverage(&self) -> ProcRes {
-        let mut kani = Command::new("kani");
+        let mut kani = kani_command();
         if !self.props.compile_flags.is_empty() {
             kani.env("RUSTFLAGS", self.props.compile_flags.join(" "));
         }
