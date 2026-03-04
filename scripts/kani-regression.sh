@@ -80,43 +80,48 @@ TESTS=(
     "kani-fixme kani-fixme"
 )
 
-# Build compiletest and print configuration. We pick suite / mode combo so there's no test.
-echo "--- Compiletest configuration"
-cargo run -p compiletest --quiet -- --suite kani --mode cargo-kani --dry-run --verbose
-echo "-----------------------------"
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+  echo "Skipping compiletest, kani-cov, firecracker codegen, and cargo-kani manifest tests on Windows."
+  echo "Reason: Kani verification targets are currently Linux/macOS only."
+else
+  # Build compiletest and print configuration. We pick suite / mode combo so there's no test.
+  echo "--- Compiletest configuration"
+  cargo run -p compiletest --quiet -- --suite kani --mode cargo-kani --dry-run --verbose
+  echo "-----------------------------"
 
-# Build `kani-cov`
-echo "Building kani-cov..."
-cargo build -p kani-cov
+  # Build `kani-cov`
+  echo "Building kani-cov..."
+  cargo build -p kani-cov
 
-# Extract testing suite information and run compiletest
-for testp in "${TESTS[@]}"; do
-  testl=($testp)
-  suite=${testl[0]}
-  mode=${testl[1]}
-  echo "Check compiletest suite=$suite mode=$mode"
-  cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
-      --quiet --no-fail-fast
-done
+  # Extract testing suite information and run compiletest
+  for testp in "${TESTS[@]}"; do
+    testl=($testp)
+    suite=${testl[0]}
+    mode=${testl[1]}
+    echo "Check compiletest suite=$suite mode=$mode"
+    cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+        --quiet --no-fail-fast
+  done
 
-# We rarely benefit from re-using build artifacts in the firecracker test,
-# and we often end up with incompatible leftover artifacts:
-# "error[E0514]: found crate `serde_derive` compiled by an incompatible version of rustc"
-# So if we're calling the full regression suite, wipe out old artifacts.
-if [ -d "$KANI_DIR/firecracker/build" ]; then
-  rm -rf "$KANI_DIR/firecracker/build"
+  # We rarely benefit from re-using build artifacts in the firecracker test,
+  # and we often end up with incompatible leftover artifacts:
+  # "error[E0514]: found crate `serde_derive` compiled by an incompatible version of rustc"
+  # So if we're calling the full regression suite, wipe out old artifacts.
+  if [ -d "$KANI_DIR/firecracker/build" ]; then
+    rm -rf "$KANI_DIR/firecracker/build"
+  fi
+
+  # Check codegen of firecracker
+  echo "Checking codegen of firecracker..."
+  time "$SCRIPT_DIR"/codegen-firecracker.sh
+
+  # Test for --manifest-path which we cannot do through compiletest.
+  # It should just successfully find the project and specified proof harness. (Then clean up.)
+  echo "Testing --manifest-path..."
+  FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
+  cargo kani --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
+  cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 fi
-
-# Check codegen of firecracker
-echo "Checking codegen of firecracker..."
-time "$SCRIPT_DIR"/codegen-firecracker.sh
-
-# Test for --manifest-path which we cannot do through compiletest.
-# It should just successfully find the project and specified proof harness. (Then clean up.)
-echo "Testing --manifest-path..."
-FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
-cargo kani --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
-cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 
 # Build all packages in the workspace and ensure no warning is emitted.
 # Please don't replace `cargo build-dev` above with this command.
