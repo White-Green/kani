@@ -33,16 +33,9 @@ fn kani_command() -> Command {
         .parent()
         .and_then(Path::parent)
         .expect("tools/compiletest is expected to be under repository root");
-    let script = repo_root.join("scripts").join("kani");
+    let bundle_kani = repo_root.join("target").join("kani").join("bin").join("kani.exe");
 
-    let mut cmd = if let Some(program_files) = env::var_os("ProgramFiles") {
-        let git_bash = PathBuf::from(program_files).join("Git").join("bin").join("bash.exe");
-        if git_bash.exists() { Command::new(git_bash) } else { Command::new("bash") }
-    } else {
-        Command::new("bash")
-    };
-    cmd.arg(script);
-    cmd
+    if bundle_kani.exists() { Command::new(bundle_kani) } else { Command::new("kani") }
 }
 
 #[cfg(not(windows))]
