@@ -33,9 +33,14 @@ fn kani_command() -> Command {
         .parent()
         .and_then(Path::parent)
         .expect("tools/compiletest is expected to be under repository root");
-    let bundle_kani = repo_root.join("target").join("kani").join("bin").join("kani.exe");
+    let bundle_kani_driver =
+        repo_root.join("target").join("kani").join("bin").join("kani-driver.exe");
 
-    if bundle_kani.exists() { Command::new(bundle_kani) } else { Command::new("kani") }
+    if bundle_kani_driver.exists() {
+        Command::new(bundle_kani_driver)
+    } else {
+        Command::new("kani")
+    }
 }
 
 #[cfg(not(windows))]
