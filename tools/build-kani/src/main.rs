@@ -137,10 +137,38 @@ fn bundle_cbmc(dir: &Path) -> Result<()> {
     // We use these directly
     cp(&which::which("cbmc")?, &bin)?;
     cp(&which::which("goto-instrument")?, &bin)?;
-    cp(&which::which("goto-cc")?, &bin)?;
+
+    let goto_cc = goto_cc_binary_path()?;
+    cp(&goto_cc, &bin)?;
+    #[cfg(windows)]
+    if goto_cc
+        .file_name()
+        .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case("goto-cl.exe"))
+    {
+        let goto_cl_in_bin = bin.join("goto-cl.exe");
+        let goto_cc_in_bin = bin.join("goto-cc.exe");
+        std::fs::copy(&goto_cl_in_bin, &goto_cc_in_bin)?;
+    }
+
     cp(&which::which("goto-analyzer")?, &bin)?;
 
     Ok(())
+}
+
+fn goto_cc_binary_path() -> Result<PathBuf> {
+    if let Ok(path) = which::which("goto-cc") {
+        return Ok(path);
+    }
+
+    #[cfg(windows)]
+    {
+        return which::which("goto-cl").map_err(Into::into);
+    }
+
+    #[cfg(not(windows))]
+    {
+        bail!("Could not find 'goto-cc' in PATH");
+    }
 }
 
 /// Copy Kissat binary into `dir`

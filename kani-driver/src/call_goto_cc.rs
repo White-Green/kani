@@ -8,6 +8,21 @@ use std::process::Command;
 
 use crate::session::KaniSession;
 
+fn goto_cc_command() -> Command {
+    #[cfg(windows)]
+    {
+        if which::which("goto-cc").is_ok() {
+            return Command::new("goto-cc");
+        }
+
+        if which::which("goto-cl").is_ok() {
+            return Command::new("goto-cl");
+        }
+    }
+
+    Command::new("goto-cc")
+}
+
 impl KaniSession {
     /// Given a set of goto binaries (`inputs`), produce `output` by linking everything
     /// together (including essential libraries). The result is generic over all proof harnesses.
@@ -23,8 +38,7 @@ impl KaniSession {
         args.push("-o".into());
         args.push(output.to_owned().into_os_string());
 
-        // TODO get goto-cc path from self
-        let mut cmd = Command::new("goto-cc");
+        let mut cmd = goto_cc_command();
         cmd.args(args);
 
         self.run_suppress(cmd)?;
@@ -39,7 +53,7 @@ impl KaniSession {
         output: &Path,
         function: &str,
     ) -> Result<()> {
-        let mut cmd = Command::new("goto-cc");
+        let mut cmd = goto_cc_command();
         cmd.arg(input).args(["--function", function, "-o"]).arg(output);
 
         self.run_suppress(cmd)?;

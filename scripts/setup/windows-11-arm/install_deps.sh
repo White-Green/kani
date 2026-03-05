@@ -91,6 +91,19 @@ fi
 /usr/local/bin/cvc5.exe --version
 cbmc.exe --version
 where cbmc.exe || echo "cbmc.exe not found in PATH"
+where goto-cc.exe || echo "goto-cc.exe not found in PATH"
+where goto-cl.exe || echo "goto-cl.exe not found in PATH"
+
+# Some Windows CBMC packages expose `goto-cl.exe` instead of `goto-cc.exe`.
+if ! command -v goto-cc >/dev/null 2>&1 && command -v goto-cl >/dev/null 2>&1; then
+  cat > /usr/local/bin/goto-cc <<'EOF'
+#!/usr/bin/env bash
+exec goto-cl "$@"
+EOF
+  chmod +x /usr/local/bin/goto-cc
+  echo "Created goto-cc shim at /usr/local/bin/goto-cc"
+fi
 
 # Kissat is currently skipped for Windows ARM
 echo "Warning: Kissat installation skipped for Windows ARM"
+
