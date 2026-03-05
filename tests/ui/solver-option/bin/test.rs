@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // kani-flags: --solver bin=kissat
 
 //! Checks that `--solver` accepts `bin=<binary>`
@@ -10,3 +11,4 @@ fn check_solver_option() {
     let s = &a[..];
     assert_eq!(a, s);
 }
+

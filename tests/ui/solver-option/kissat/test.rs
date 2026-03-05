@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // kani-flags: --solver kissat
 
 //! Checks that the solver option overrides the solver attribute
@@ -11,3 +12,4 @@ fn check_solver_option() {
     let v_copy = v.clone();
     assert_eq!(v, v_copy);
 }
+

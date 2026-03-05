@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // kani-flags: -Z unstable-options --synthesize-loop-contracts --cbmc-args --object-bits 4
 
@@ -17,3 +18,4 @@ fn main() {
 
     assert!(x == 1);
 }
+

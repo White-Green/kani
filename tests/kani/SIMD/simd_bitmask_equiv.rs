@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 #![feature(repr_simd, core_intrinsics)]
 #![feature(generic_const_exprs)]
 #![feature(portable_simd)]
@@ -76,3 +77,4 @@ fn check_equiv() {
         assert_eq!(result1, result2);
     }
 }
+

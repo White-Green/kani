@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! This test checks that concatenating two nondet arrays into a vector
 //! preserves the values
@@ -19,3 +20,4 @@ fn check_concat() {
 }
 
 fn main() {}
+

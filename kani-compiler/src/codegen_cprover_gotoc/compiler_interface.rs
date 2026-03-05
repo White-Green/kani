@@ -571,20 +571,25 @@ fn check_target(session: &Session) {
     let is_x86_64_linux_target = session.target.llvm_target == "x86_64-unknown-linux-gnu";
     let is_arm64_linux_target = session.target.llvm_target == "aarch64-unknown-linux-gnu";
     // Comparison with `x86_64-apple-darwin` does not work well because the LLVM
-    // target may become `x86_64-apple-macosx10.7.0` (or similar) and fail
+    // target may become `x86_64-apple-macosx10.7.0` (or similar) and fail.
     let is_x86_64_darwin_target = session.target.llvm_target.starts_with("x86_64-apple-");
-    // looking for `arm64-apple-*`
+    // Looking for `arm64-apple-*`.
     let is_arm64_darwin_target = session.target.llvm_target.starts_with("arm64-apple-");
+    // We currently validate and test on MSVC-based Windows targets.
+    let is_x86_64_windows_target = session.target.llvm_target.starts_with("x86_64-pc-windows-");
+    let is_arm64_windows_target = session.target.llvm_target.starts_with("aarch64-pc-windows-");
 
     if !is_x86_64_linux_target
         && !is_arm64_linux_target
         && !is_x86_64_darwin_target
         && !is_arm64_darwin_target
+        && !is_x86_64_windows_target
+        && !is_arm64_windows_target
     {
         let err_msg = format!(
             "Kani requires the target platform to be `x86_64-unknown-linux-gnu`, \
-            `aarch64-unknown-linux-gnu`, `x86_64-apple-*` or `arm64-apple-*`, but \
-            it is {}",
+            `aarch64-unknown-linux-gnu`, `x86_64-apple-*`, `arm64-apple-*`, \
+            `x86_64-pc-windows-*` or `aarch64-pc-windows-*`, but it is {}",
             &session.target.llvm_target
         );
         session.dcx().err(err_msg);
@@ -771,10 +776,8 @@ impl GotoCodegenResults {
 
 /// Builds a machine model which is required by CBMC
 fn new_machine_model(sess: &Session) -> MachineModel {
-    // The model assumes a `x86_64-unknown-linux-gnu`, `x86_64-apple-darwin`
-    // or `aarch64-apple-darwin` platform. We check the target platform in function
-    // `check_target` from src/kani-compiler/src/codegen_cprover_gotoc/compiler_interface.rs
-    // and error if it is not any of the ones we expect.
+    // The model assumes a Linux, macOS, or Windows target validated by
+    // `check_target` in this file.
     let architecture = &sess.target.arch;
     let os = &sess.target.os;
     let pointer_width = sess.target.pointer_width.into();
@@ -805,13 +808,13 @@ fn new_machine_model(sess: &Session) -> MachineModel {
             let double_width = 64;
             let float_width = 32;
             let int_width = 32;
-            let long_double_width = 128;
-            let long_int_width = 64;
+            let long_double_width = if matches!(os, Os::Windows) { 64 } else { 128 };
+            let long_int_width = if matches!(os, Os::Windows) { 32 } else { 64 };
             let long_long_int_width = 64;
             let short_int_width = 16;
             let single_width = 32;
-            let wchar_t_is_unsigned = false;
-            let wchar_t_width = 32;
+            let wchar_t_is_unsigned = matches!(os, Os::Windows);
+            let wchar_t_width = if matches!(os, Os::Windows) { 16 } else { 32 };
 
             MachineModel {
                 architecture: match architecture {
@@ -843,7 +846,7 @@ fn new_machine_model(sess: &Session) -> MachineModel {
         }
         Arch::AArch64 => {
             let bool_width = 8;
-            let char_is_unsigned = true;
+            let char_is_unsigned = !matches!(os, Os::Windows);
             let char_width = 8;
             let double_width = 64;
             let float_width = 32;
@@ -852,15 +855,15 @@ fn new_machine_model(sess: &Session) -> MachineModel {
                 Os::Linux => 128,
                 _ => 64,
             };
-            let long_int_width = 64;
+            let long_int_width = if matches!(os, Os::Windows) { 32 } else { 64 };
             let long_long_int_width = 64;
             let short_int_width = 16;
             let single_width = 32;
             // https://developer.arm.com/documentation/dui0491/i/Compiler-Command-line-Options/--signed-chars----unsigned-chars
             // https://www.arm.linux.org.uk/docs/faqs/signedchar.php
             // https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
-            let wchar_t_is_unsigned = matches!(os, Os::Linux);
-            let wchar_t_width = 32;
+            let wchar_t_is_unsigned = matches!(os, Os::Linux | Os::Windows);
+            let wchar_t_width = if matches!(os, Os::Windows) { 16 } else { 32 };
 
             MachineModel {
                 // CBMC calls it arm64, not aarch64
