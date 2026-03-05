@@ -11,4 +11,3 @@ fn check_solver_option() {
     let s = &a[..];
     assert_eq!(a, s);
 }
-

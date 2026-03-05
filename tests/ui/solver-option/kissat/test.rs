@@ -12,4 +12,3 @@ fn check_solver_option() {
     let v_copy = v.clone();
     assert_eq!(v, v_copy);
 }
-

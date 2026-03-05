@@ -20,4 +20,3 @@ fn check_concat() {
 }
 
 fn main() {}
-

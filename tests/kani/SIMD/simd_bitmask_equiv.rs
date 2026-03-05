@@ -77,4 +77,3 @@ fn check_equiv() {
         assert_eq!(result1, result2);
     }
 }
-
