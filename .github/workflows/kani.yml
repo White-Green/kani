@@ -63,6 +63,7 @@ jobs:
         shell: bash
 
   perf:
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -137,3 +138,5 @@ jobs:
           branch: gh-pages
           folder: docs/book/
           single-commit: true
+
+
