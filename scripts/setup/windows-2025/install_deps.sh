@@ -94,12 +94,11 @@ where goto-cl.exe || echo "goto-cl.exe not found in PATH"
 
 # Some Windows CBMC packages expose `goto-cl.exe` instead of `goto-cc.exe`.
 if ! command -v goto-cc >/dev/null 2>&1 && command -v goto-cl >/dev/null 2>&1; then
-  cat > /usr/local/bin/goto-cc <<'EOF'
-#!/usr/bin/env bash
-exec goto-cl "$@"
-EOF
-  chmod +x /usr/local/bin/goto-cc
-  echo "Created goto-cc shim at /usr/local/bin/goto-cc"
+  powershell.exe -NoProfile -NonInteractive -Command "\
+    $gotoCl = (Get-Command goto-cl.exe -ErrorAction Stop).Source; \
+    $gotoCc = Join-Path (Split-Path $gotoCl -Parent) 'goto-cc.exe'; \
+    Copy-Item -Path $gotoCl -Destination $gotoCc -Force; \
+    Write-Host 'Created goto-cc.exe at' $gotoCc"
 fi
 
 # Kissat is currently skipped for Windows as it requires a complex build setup
