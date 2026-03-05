@@ -15,7 +15,7 @@ use crate::sysroot::{
 };
 use anyhow::{Result, bail};
 use clap::Parser;
-use std::{ffi::OsString, path::Path, process::Command};
+use std::{ffi::OsString, path::Path, path::PathBuf, process::Command};
 
 fn main() -> Result<()> {
     let args = parser::ArgParser::parse();
