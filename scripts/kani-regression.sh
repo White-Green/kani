@@ -91,6 +91,11 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   is_windows=true
 fi
 
+if [[ "${is_windows}" == "true" ]]; then
+  # Work around goto-cc temp-file clashes on Windows by running compiletest serially.
+  export RUST_TEST_THREADS=1
+fi
+
 # Build compiletest and print configuration. We pick suite / mode combo so there's no test.
 echo "--- Compiletest configuration"
 cargo run -p compiletest --quiet -- --suite kani --mode cargo-kani --dry-run --verbose
@@ -157,3 +162,4 @@ RUSTFLAGS="-D warnings" cargo build --target-dir /tmp/kani_build_warnings --no-d
 echo
 echo "All Kani regression tests completed successfully."
 echo
+
