@@ -133,11 +133,7 @@ impl TestCx<'_> {
             .and_then(Path::parent)
             .expect("tools/compiletest is expected to be under repository root");
 
-        let rel_dir = self
-            .testpaths
-            .relative_dir
-            .to_string_lossy()
-            .replace(['\\', '/'], "-");
+        let rel_dir = self.testpaths.relative_dir.to_string_lossy().replace(['\\', '/'], "-");
         let stem = self.testpaths.file.file_stem().unwrap().to_string_lossy();
         let short_name = format!("{}-{}-{}", self.config.suite, rel_dir, stem);
         repo_root.join("build").join("cargo-kani-targets").join(short_name)
@@ -348,10 +344,7 @@ impl TestCx<'_> {
         let parent_dir = self.testpaths.file.parent().unwrap();
         // The name of the function to test is the same as the stem of `*.expected` file
         let function_name = self.testpaths.file.file_stem().unwrap().to_str().unwrap();
-        cargo
-            .arg("--target-dir")
-            .arg(self.cargo_test_target_dir())
-            .current_dir(parent_dir);
+        cargo.arg("--target-dir").arg(self.cargo_test_target_dir()).current_dir(parent_dir);
         if test {
             cargo.arg("--tests");
         }
