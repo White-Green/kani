@@ -125,6 +125,29 @@ struct TestCx<'test> {
 }
 
 impl TestCx<'_> {
+    #[cfg(windows)]
+    fn cargo_test_target_dir(&self) -> PathBuf {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let repo_root = manifest_dir
+            .parent()
+            .and_then(Path::parent)
+            .expect("tools/compiletest is expected to be under repository root");
+
+        let rel_dir = self
+            .testpaths
+            .relative_dir
+            .to_string_lossy()
+            .replace(['\\', '/'], "-");
+        let stem = self.testpaths.file.file_stem().unwrap().to_string_lossy();
+        let short_name = format!("{}-{}-{}", self.config.suite, rel_dir, stem);
+        repo_root.join("build").join("cargo-kani-targets").join(short_name)
+    }
+
+    #[cfg(not(windows))]
+    fn cargo_test_target_dir(&self) -> PathBuf {
+        self.output_base_dir().join("target")
+    }
+
     /// Code executed
     fn run(&self) {
         match self.config.mode {
@@ -327,7 +350,7 @@ impl TestCx<'_> {
         let function_name = self.testpaths.file.file_stem().unwrap().to_str().unwrap();
         cargo
             .arg("--target-dir")
-            .arg(self.output_base_dir().join("target"))
+            .arg(self.cargo_test_target_dir())
             .current_dir(parent_dir);
         if test {
             cargo.arg("--tests");
@@ -397,7 +420,7 @@ impl TestCx<'_> {
             .arg("--coverage")
             .arg("-Zsource-coverage")
             .arg("--target-dir")
-            .arg(self.output_base_dir().join("target"))
+            .arg(self.cargo_test_target_dir())
             .current_dir(parent_dir);
 
         if "expected" != self.testpaths.file.file_name().unwrap() {
