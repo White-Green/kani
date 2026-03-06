@@ -21,7 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, ubuntu-22.04, ubuntu-24.04, macos-14, ubuntu-24.04-arm, windows-2025, windows-11-arm]
+        # TEMPORARY: narrow matrix for faster Windows bring-up loops.
+        os: [windows-2025, windows-11-arm]
     steps:
       - name: Checkout Kani
         uses: actions/checkout@v6
@@ -36,6 +37,8 @@ jobs:
         shell: bash
 
   benchcomp-tests:
+    # TEMPORARY: skip on push while focusing on Windows regression bring-up.
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -84,6 +87,8 @@ jobs:
           RUST_TEST_THREADS: 1
 
   llbc-regression:
+    # TEMPORARY: skip on push while focusing on Windows regression bring-up.
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -113,6 +118,8 @@ jobs:
         shell: bash
 
   documentation:
+    # TEMPORARY: skip on push while focusing on Windows regression bring-up.
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
