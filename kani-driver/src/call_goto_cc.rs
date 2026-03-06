@@ -28,7 +28,7 @@ impl KaniSession {
         args.push("-o".into());
         args.push(output.to_owned().into_os_string());
 
-        let mut cmd = Command::new(GOTO_CC_BIN);
+        let mut cmd = Command::new("goto-cc");
         cmd.args(args);
 
         self.run_suppress(cmd)?;
@@ -43,7 +43,7 @@ impl KaniSession {
         output: &Path,
         function: &str,
     ) -> Result<()> {
-        let mut cmd = Command::new(GOTO_CC_BIN);
+        let mut cmd = Command::new("goto-cc");
         cmd.arg(input).args(["--function", function, "-o"]).arg(output);
 
         self.run_suppress(cmd)?;
