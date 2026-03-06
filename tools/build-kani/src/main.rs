@@ -15,7 +15,7 @@ use crate::sysroot::{
 };
 use anyhow::{Result, bail};
 use clap::Parser;
-use std::{ffi::OsString, path::Path, process::Command};
+use std::{ffi::OsString, path::{Path, PathBuf}, process::Command};
 
 fn main() -> Result<()> {
     let args = parser::ArgParser::parse();
@@ -137,10 +137,26 @@ fn bundle_cbmc(dir: &Path) -> Result<()> {
     // We use these directly
     cp(&which::which("cbmc")?, &bin)?;
     cp(&which::which("goto-instrument")?, &bin)?;
-    cp(&which::which("goto-cc")?, &bin)?;
+    cp(&find_goto_cc_binary()?, &bin)?;
     cp(&which::which("goto-analyzer")?, &bin)?;
 
     Ok(())
+}
+
+fn find_goto_cc_binary() -> Result<PathBuf> {
+    if let Ok(goto_cc) = which::which("goto-cc") {
+        return Ok(goto_cc);
+    }
+
+    #[cfg(windows)]
+    {
+        return which::which("goto-cl").map_err(Into::into);
+    }
+
+    #[cfg(not(windows))]
+    {
+        bail!("Couldn't find the 'goto-cc' binary to include in the release bundle.");
+    }
 }
 /// Copy Kissat binary into `dir`
 fn bundle_kissat(dir: &Path) -> Result<()> {
