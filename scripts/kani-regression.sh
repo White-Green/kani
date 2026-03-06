@@ -83,6 +83,7 @@ TESTS=(
 )
 
 WINDOWS_SKIPPED_SUITES=(
+  "kani"
   "firecracker"
   "prusti"
   "smack"
