@@ -59,7 +59,10 @@ fn cargo_kani_command() -> Command {
         repo_root.join("target").join("kani").join("bin").join("kani-driver.exe");
 
     if bundle_kani_driver.exists() {
-        Command::new(bundle_kani_driver)
+        let mut cmd = Command::new(bundle_kani_driver);
+        // Emulate `cargo kani ...` so kani-driver enters CargoKani mode.
+        cmd.arg("kani");
+        cmd
     } else {
         let mut cmd = Command::new("cargo");
         cmd.arg("kani");
