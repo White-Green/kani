@@ -117,14 +117,14 @@ for testp in "${TESTS[@]}"; do
       echo "Skipping compiletest suite=$suite mode=$mode on Windows"
       continue
     fi
-    compiletest_extra_args=(--timeout 600)
+    echo "Check compiletest suite=$suite mode=$mode"
+    cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+        --quiet --no-fail-fast --timeout 600
   else
-    compiletest_extra_args=()
+    echo "Check compiletest suite=$suite mode=$mode"
+    cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+        --quiet --no-fail-fast
   fi
-
-  echo "Check compiletest suite=$suite mode=$mode"
-  cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
-      --quiet --no-fail-fast "${compiletest_extra_args[@]}"
 done
 
 if [[ "${is_windows}" == "true" ]]; then
