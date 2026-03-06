@@ -8,11 +8,6 @@ use std::process::Command;
 
 use crate::session::KaniSession;
 
-#[cfg(windows)]
-const GOTO_CC_BIN: &str = "goto-cl";
-#[cfg(not(windows))]
-const GOTO_CC_BIN: &str = "goto-cc";
-
 impl KaniSession {
     /// Given a set of goto binaries (`inputs`), produce `output` by linking everything
     /// together (including essential libraries). The result is generic over all proof harnesses.

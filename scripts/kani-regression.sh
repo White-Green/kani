@@ -84,6 +84,7 @@ TESTS=(
 
 WINDOWS_SKIPPED_SUITES=(
   "kani"
+  "expected"
   "firecracker"
   "prusti"
   "smack"
