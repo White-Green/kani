@@ -49,8 +49,6 @@ ${SCRIPT_DIR}/kani-fmt.sh --check
 # Build kani
 echo "Building Kani..."
 cargo build-dev
-# Ensure built Kani binaries are discoverable (notably cargo-kani on Windows).
-export PATH="$KANI_DIR/target/kani/bin:$PATH"
 
 # Unit tests
 echo "Running Unit tests..."
