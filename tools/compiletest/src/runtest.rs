@@ -48,6 +48,32 @@ fn kani_command() -> Command {
     Command::new("kani")
 }
 
+#[cfg(windows)]
+fn cargo_kani_command() -> Command {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let repo_root = manifest_dir
+        .parent()
+        .and_then(Path::parent)
+        .expect("tools/compiletest is expected to be under repository root");
+    let bundle_kani_driver =
+        repo_root.join("target").join("kani").join("bin").join("kani-driver.exe");
+
+    if bundle_kani_driver.exists() {
+        Command::new(bundle_kani_driver)
+    } else {
+        let mut cmd = Command::new("cargo");
+        cmd.arg("kani");
+        cmd
+    }
+}
+
+#[cfg(not(windows))]
+fn cargo_kani_command() -> Command {
+    let mut cmd = Command::new("cargo");
+    cmd.arg("kani");
+    cmd
+}
+
 /// Configurations for `exec` tests
 #[derive(Debug, Serialize, Deserialize)]
 struct ExecConfig {
@@ -291,13 +317,12 @@ impl TestCx<'_> {
     /// contain the expected output in `self.testpaths.file`.
     fn run_cargo_kani_test(&self, test: bool) {
         // We create our own command for the same reasons listed in `run_kani_test` method.
-        let mut cargo = Command::new("cargo");
+        let mut cargo = cargo_kani_command();
         // We run `cargo` on the directory where we found the `*.expected` file
         let parent_dir = self.testpaths.file.parent().unwrap();
         // The name of the function to test is the same as the stem of `*.expected` file
         let function_name = self.testpaths.file.file_stem().unwrap().to_str().unwrap();
         cargo
-            .arg("kani")
             .arg("--target-dir")
             .arg(self.output_base_dir().join("target"))
             .current_dir(parent_dir);
@@ -360,13 +385,12 @@ impl TestCx<'_> {
     /// Run Kani with coverage enabled on a cargo package
     fn run_cargo_coverage_test(&self) {
         // We create our own command for the same reasons listed in `run_kani_test` method.
-        let mut cargo = Command::new("cargo");
+        let mut cargo = cargo_kani_command();
         // We run `cargo` on the directory where we found the `*.expected` file
         let parent_dir = self.testpaths.file.parent().unwrap();
         // The name of the function to test is the same as the stem of `*.expected` file
         let function_name = self.testpaths.file.file_stem().unwrap().to_str().unwrap();
         cargo
-            .arg("kani")
             .arg("--coverage")
             .arg("-Zsource-coverage")
             .arg("--target-dir")

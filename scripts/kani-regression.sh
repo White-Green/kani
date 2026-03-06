@@ -147,7 +147,7 @@ fi
 # It should just successfully find the project and specified proof harness. (Then clean up.)
 echo "Testing --manifest-path..."
 FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
-cargo kani --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
+"${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
 cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 
 # Build all packages in the workspace and ensure no warning is emitted.
