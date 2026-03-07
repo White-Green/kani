@@ -107,10 +107,17 @@ install_cbmc_from_source() {
     -Dsat_impl="${sat_impl}"
   cmake --build build --config "${build_type}" --parallel
 
+  local cbmc_exe_msys
+  cbmc_exe_msys="$(find build -type f -path "*/${build_type}/cbmc.exe" | head -n 1)"
+  if [[ -z "${cbmc_exe_msys}" ]]; then
+    echo "CBMC executable not found for configuration ${build_type}"
+    exit 1
+  fi
+
   local cbmc_bin_msys
-  cbmc_bin_msys="$(dirname "$(find build -type f -path "*/${build_type}/cbmc.exe" | head -n 1)")"
-  if [[ -z "${cbmc_bin_msys}" || ! -d "${cbmc_bin_msys}" ]]; then
-    echo "CBMC build output not found for configuration ${build_type}"
+  cbmc_bin_msys="$(dirname "${cbmc_exe_msys}")"
+  if [[ ! -d "${cbmc_bin_msys}" ]]; then
+    echo "CBMC bin directory not found: ${cbmc_bin_msys}"
     exit 1
   fi
 
