@@ -1,8 +1,9 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::ffi::{OsStr, OsString};
+use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -206,10 +207,41 @@ impl KaniSession {
             }
         }
 
-        args.push(Self::normalize_tool_path(file));
-        args.push(Self::normalize_tool_path(file));
+        #[cfg(windows)]
+        {
+            // Work around goto-instrument crashes on Windows with long mangled artifact names.
+            let short_file =
+                file.with_file_name(format!("kani-instrument-{}.out", std::process::id()));
+            fs::copy(file, &short_file).with_context(|| {
+                format!(
+                    "Failed to create temporary goto-instrument input {} from {}",
+                    short_file.display(),
+                    file.display()
+                )
+            })?;
 
-        self.call_goto_instrument(&args)
+            args.push(Self::normalize_tool_path(&short_file));
+            args.push(Self::normalize_tool_path(&short_file));
+            let result = self.call_goto_instrument(&args);
+            if result.is_ok() {
+                fs::copy(&short_file, file).with_context(|| {
+                    format!(
+                        "Failed to copy temporary goto-instrument output {} to {}",
+                        short_file.display(),
+                        file.display()
+                    )
+                })?;
+            }
+            let _ = fs::remove_file(&short_file);
+            result
+        }
+
+        #[cfg(not(windows))]
+        {
+            args.push(Self::normalize_tool_path(file));
+            args.push(Self::normalize_tool_path(file));
+            self.call_goto_instrument(&args)
+        }
     }
 
     /// Generate a .demangled.c file from the .c file using the `prettyName`s from the symbol table
