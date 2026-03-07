@@ -11,7 +11,7 @@ use crate::session::KaniSession;
 
 impl KaniSession {
     #[cfg(windows)]
-    fn normalize_tool_path(path: &Path) -> OsString {
+    pub(crate) fn normalize_tool_path(path: &Path) -> OsString {
         let path_str = path.as_os_str().to_string_lossy();
         if let Some(stripped) = path_str.strip_prefix(r"\\?\UNC\") {
             return OsString::from(format!(r"\\{stripped}"));
@@ -23,7 +23,7 @@ impl KaniSession {
     }
 
     #[cfg(not(windows))]
-    fn normalize_tool_path(path: &Path) -> OsString {
+    pub(crate) fn normalize_tool_path(path: &Path) -> OsString {
         path.as_os_str().to_owned()
     }
 

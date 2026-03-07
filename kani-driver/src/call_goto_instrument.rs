@@ -84,9 +84,9 @@ impl KaniSession {
 
         let args: Vec<OsString> = vec![
             "--function-pointer-restrictions-file".into(),
-            linked_restrictions.into(),
-            goto_file.to_owned().into_os_string(), // input
-            goto_file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(&linked_restrictions),
+            Self::normalize_tool_path(goto_file), // input
+            Self::normalize_tool_path(goto_file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -100,8 +100,8 @@ impl KaniSession {
         let args: Vec<OsString> = vec![
             "--add-library".into(),
             "--no-malloc-may-fail".into(),
-            file.to_owned().into_os_string(), // input
-            file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(file), // input
+            Self::normalize_tool_path(file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -120,8 +120,8 @@ impl KaniSession {
             "--generate-function-body".into(),
             ".*".into(),
             "--drop-unused-functions".into(),
-            file.to_owned().into_os_string(), // input
-            file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(file), // input
+            Self::normalize_tool_path(file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -131,8 +131,8 @@ impl KaniSession {
     fn just_drop_unused_functions(&self, file: &Path) -> Result<()> {
         let args: Vec<OsString> = vec![
             "--drop-unused-functions".into(),
-            file.to_owned().into_os_string(), // input
-            file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(file), // input
+            Self::normalize_tool_path(file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -141,8 +141,8 @@ impl KaniSession {
     fn rewrite_back_edges(&self, file: &Path) -> Result<()> {
         let args: Vec<OsString> = vec![
             "--ensure-one-backedge-per-target".into(),
-            file.to_owned().into_os_string(), // input
-            file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(file), // input
+            Self::normalize_tool_path(file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -151,8 +151,8 @@ impl KaniSession {
     fn goto_sanity_check(&self, file: &Path) -> Result<()> {
         let args: Vec<OsString> = vec![
             "--validate-goto-model".into(),
-            file.to_owned().into_os_string(), // input
-            file.to_owned().into_os_string(), // output
+            Self::normalize_tool_path(file), // input
+            Self::normalize_tool_path(file), // output
         ];
 
         self.call_goto_instrument(args)
@@ -162,8 +162,8 @@ impl KaniSession {
     pub fn gen_c(&self, file: &Path, output_file: &Path) -> Result<()> {
         let args: Vec<OsString> = vec![
             "--dump-c".into(),
-            file.to_owned().into_os_string(),
-            output_file.to_owned().into_os_string(),
+            Self::normalize_tool_path(file),
+            Self::normalize_tool_path(output_file),
         ];
 
         self.call_goto_instrument(args)
@@ -206,8 +206,8 @@ impl KaniSession {
             }
         }
 
-        args.push(file.into());
-        args.push(file.into());
+        args.push(Self::normalize_tool_path(file));
+        args.push(Self::normalize_tool_path(file));
 
         self.call_goto_instrument(&args)
     }
