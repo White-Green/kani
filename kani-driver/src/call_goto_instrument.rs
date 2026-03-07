@@ -182,11 +182,11 @@ impl KaniSession {
             return Ok(());
         }
 
-        let mut args: Vec<OsString> =
+        let mut dfcc_args: Vec<OsString> =
             vec!["--dfcc".into(), (&harness.mangled_name).into(), "--no-malloc-may-fail".into()];
 
         if is_loop_contracts_enabled {
-            args.append(&mut vec![
+            dfcc_args.append(&mut vec![
                 "--apply-loop-contracts".into(),
                 "--loop-contracts-no-unwind".into(),
                 // Because loop contracts now are wrapped in a closure which will be a side-effect expression in CBMC even they
@@ -197,14 +197,16 @@ impl KaniSession {
             ]);
         }
 
+        let mut passes: Vec<Vec<OsString>> = vec![dfcc_args];
         if let Some(assigns) = harness.contract.as_ref() {
-            args.push("--enforce-contract".into());
-            args.push(assigns.contracted_function_name.as_str().into());
+            let mut enforce_args: Vec<OsString> =
+                vec!["--enforce-contract".into(), assigns.contracted_function_name.as_str().into()];
 
             if let Some(tracker) = &assigns.recursion_tracker {
-                args.push("--nondet-static-exclude".into());
-                args.push(tracker.as_str().into());
+                enforce_args.push("--nondet-static-exclude".into());
+                enforce_args.push(tracker.as_str().into());
             }
+            passes.push(enforce_args);
         }
 
         #[cfg(windows)]
@@ -220,21 +222,10 @@ impl KaniSession {
                 )
             })?;
 
-            args.push(Self::normalize_tool_path(&short_file));
-            args.push(Self::normalize_tool_path(&short_file));
-            let result = self.call_goto_instrument(&args);
-            if let Err(err) = result {
-                // Work around sporadic goto-instrument abnormal termination on Windows.
-                // We have observed the tool still emitting a transformed model before
-                // returning this status code.
-                if err.to_string().contains("0xc0000409") {
-                    if !self.args.common_args.quiet {
-                        eprintln!(
-                            "[Kani] Warning: ignoring goto-instrument exit code 0xc0000409 on \
-                             Windows."
-                        );
-                    }
-                } else {
+            for mut pass_args in passes {
+                pass_args.push(Self::normalize_tool_path(&short_file));
+                pass_args.push(Self::normalize_tool_path(&short_file));
+                if let Err(err) = self.call_goto_instrument(&pass_args) {
                     let _ = fs::remove_file(&short_file);
                     return Err(err);
                 }
@@ -253,9 +244,12 @@ impl KaniSession {
 
         #[cfg(not(windows))]
         {
-            args.push(Self::normalize_tool_path(file));
-            args.push(Self::normalize_tool_path(file));
-            self.call_goto_instrument(&args)
+            for mut pass_args in passes {
+                pass_args.push(Self::normalize_tool_path(file));
+                pass_args.push(Self::normalize_tool_path(file));
+                self.call_goto_instrument(&pass_args)?;
+            }
+            Ok(())
         }
     }
 
