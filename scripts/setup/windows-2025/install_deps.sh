@@ -91,6 +91,7 @@ cbmc.exe --version
 where cbmc.exe || echo "cbmc.exe not found in PATH"
 where goto-cc.exe || echo "goto-cc.exe not found in PATH"
 where goto-cl.exe || echo "goto-cl.exe not found in PATH"
+where cl.exe || echo "cl.exe not found in PATH"
 
 # Some Windows CBMC packages expose `goto-cl.exe` instead of `goto-cc.exe`.
 if ! command -v goto-cc >/dev/null 2>&1 && command -v goto-cl >/dev/null 2>&1; then
@@ -101,6 +102,31 @@ if ! command -v goto-cc >/dev/null 2>&1 && command -v goto-cl >/dev/null 2>&1; t
     Write-Host 'Created goto-cc.exe at' \$gotoCc"
 fi
 
+
+# Ensure Visual C++ compiler is available for CBMC preprocessing.
+CL_DIR_WIN="$(powershell.exe -NoProfile -NonInteractive -Command "\
+  \$cmd = Get-Command cl.exe -ErrorAction SilentlyContinue; \
+  if (\$cmd) { Split-Path \$cmd.Source -Parent; exit 0 }; \
+  \$vswhere = Join-Path \${env:ProgramFiles(x86)} 'Microsoft Visual Studio\\Installer\\vswhere.exe'; \
+  if (-not (Test-Path \$vswhere)) { exit 0 }; \
+  \$installPath = & \$vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath; \
+  if (-not \$installPath) { exit 0 }; \
+  \$cl = Get-ChildItem -Path (Join-Path \$installPath 'VC\\Tools\\MSVC') -Recurse -Filter cl.exe -ErrorAction SilentlyContinue \
+    | Where-Object { \$_.FullName -match '\\\\bin\\\\Hostx64\\\\x64\\\\cl.exe$' } \
+    | Select-Object -First 1; \
+  if (\$cl) { Split-Path \$cl.FullName -Parent }")"
+if [[ -n "${CL_DIR_WIN}" ]]; then
+  CL_DIR_MSYS="$(cygpath -u "${CL_DIR_WIN}")"
+  export PATH="${CL_DIR_MSYS}:$PATH"
+  if [[ -n "${GITHUB_PATH:-}" ]]; then
+    echo "${CL_DIR_WIN}" >> "$GITHUB_PATH"
+  fi
+  echo "Configured cl.exe from ${CL_DIR_WIN}"
+else
+  echo "Warning: could not locate cl.exe path automatically"
+fi
+where cl.exe || echo "cl.exe not found in PATH after configuration"
 # Kissat is currently skipped for Windows as it requires a complex build setup
 # or a specific Windows port.
 echo "Warning: Kissat installation skipped for Windows"
+
