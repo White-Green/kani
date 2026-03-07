@@ -10,14 +10,32 @@ echo "Setting up Windows ARM CI environment..."
 # Source kani-dependencies to get versions
 source kani-dependencies
 
+choco_install_with_retry() {
+  local package_name="$1"
+  local attempts="${2:-4}"
+  local delay_seconds="${3:-15}"
+  local i
+
+  for ((i = 1; i <= attempts; i++)); do
+    if choco install -y "${package_name}" --no-progress; then
+      return 0
+    fi
+    if [[ "${i}" -lt "${attempts}" ]]; then
+      echo "Retrying ${package_name} install (${i}/${attempts}) after ${delay_seconds}s..."
+      sleep "${delay_seconds}"
+    fi
+  done
+  return 1
+}
+
 echo "Installing Z3..."
-choco install -y z3 --no-progress || { echo "Z3 installation failed"; exit 1; }
+choco_install_with_retry z3 || { echo "Z3 installation failed"; exit 1; }
 echo "Installing CMake..."
 # On Windows ARM runners, the MSI-based cmake.install dependency can fail with
 # generic MSI errors (1603). Use the portable package to avoid MSI.
-choco install -y cmake.portable --no-progress || { echo "CMake portable installation failed"; exit 1; }
+choco_install_with_retry cmake.portable || { echo "CMake portable installation failed"; exit 1; }
 echo "Installing winflexbison..."
-choco install -y winflexbison3 --no-progress || { echo "winflexbison installation failed"; exit 1; }
+choco_install_with_retry winflexbison3 || { echo "winflexbison installation failed"; exit 1; }
 CHOCO_BIN_MSYS="/c/ProgramData/chocolatey/bin"
 WINFLEX_TOOLS_MSYS="/c/ProgramData/chocolatey/lib/winflexbison3/tools"
 if [[ -d "${CHOCO_BIN_MSYS}" ]]; then
@@ -134,17 +152,12 @@ install_cbmc_from_source() {
     -DFLEX_EXECUTABLE="${flex_exe_cmake}"
   cmake --build build --config "${build_type}" --parallel
 
-  local cbmc_exe_msys
-  cbmc_exe_msys="$(find build -type f -path "*/${build_type}/cbmc.exe" | head -n 1)"
-  if [[ -z "${cbmc_exe_msys}" ]]; then
-    echo "CBMC executable not found for configuration ${build_type}"
-    exit 1
-  fi
+  local install_dir_msys="${work_dir}/install"
+  local cbmc_bin_msys="${install_dir_msys}/bin"
 
-  local cbmc_bin_msys
-  cbmc_bin_msys="$(dirname "${cbmc_exe_msys}")"
-  if [[ ! -d "${cbmc_bin_msys}" ]]; then
-    echo "CBMC bin directory not found: ${cbmc_bin_msys}"
+  cmake --install build --config "${build_type}" --prefix "${install_dir_msys}"
+  if [[ ! -x "${cbmc_bin_msys}/cbmc.exe" ]]; then
+    echo "Installed CBMC executable not found: ${cbmc_bin_msys}/cbmc.exe"
     exit 1
   fi
 
