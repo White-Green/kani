@@ -118,8 +118,12 @@ for testp in "${TESTS[@]}"; do
       continue
     fi
     echo "Check compiletest suite=$suite mode=$mode"
+    WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
+    if [[ "$suite" == "std-checks" ]]; then
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
+    fi
     cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
-        --quiet --no-fail-fast --timeout 600
+        "${WINDOWS_COMPILETEST_ARGS[@]}"
   else
     echo "Check compiletest suite=$suite mode=$mode"
     cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
