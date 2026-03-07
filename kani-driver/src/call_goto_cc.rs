@@ -46,8 +46,8 @@ impl KaniSession {
 
             let mut args: Vec<OsString> = Vec::new();
             args.push(Self::normalize_tool_path(&short_input));
-            args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
-            args.push(Self::normalize_tool_path(&self.kani_lib_c));
+            // On Windows, avoid passing C library sources to goto-cc in this link step.
+            // These sources are not required for std-checks and have caused frequent crashes.
             args.push("-o".into());
             args.push(Self::normalize_tool_path(&short_output));
 
@@ -70,10 +70,12 @@ impl KaniSession {
 
         let mut args: Vec<OsString> = Vec::new();
         args.extend(inputs.iter().map(|x| Self::normalize_tool_path(x)));
+        #[cfg(not(windows))]
         args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
 
         // TODO think about this: kani_lib_c is just an empty c file. Maybe we could just
         // create such an empty file ourselves instead of having to look up this path.
+        #[cfg(not(windows))]
         args.push(Self::normalize_tool_path(&self.kani_lib_c));
 
         args.push("-o".into());

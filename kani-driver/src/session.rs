@@ -42,6 +42,7 @@ pub struct KaniSession {
     /// The location we found the 'kani_rustc' command
     pub kani_compiler: PathBuf,
     /// The location we found 'kani_lib.c'
+    #[cfg_attr(windows, allow(dead_code))]
     pub kani_lib_c: PathBuf,
 
     /// The temporary files we littered that need to be cleaned up at the end of execution
