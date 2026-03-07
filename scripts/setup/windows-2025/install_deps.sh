@@ -16,6 +16,14 @@ echo "Installing CMake..."
 choco install -y cmake --no-progress || { echo "CMake installation failed"; exit 1; }
 echo "Installing winflexbison..."
 choco install -y winflexbison3 --no-progress || { echo "winflexbison installation failed"; exit 1; }
+CHOCO_BIN_MSYS="/c/ProgramData/chocolatey/bin"
+WINFLEX_TOOLS_MSYS="/c/ProgramData/chocolatey/lib/winflexbison3/tools"
+if [[ -d "${CHOCO_BIN_MSYS}" ]]; then
+  export PATH="${CHOCO_BIN_MSYS}:$PATH"
+fi
+if [[ -d "${WINFLEX_TOOLS_MSYS}" ]]; then
+  export PATH="${WINFLEX_TOOLS_MSYS}:$PATH"
+fi
 if ! command -v bison >/dev/null 2>&1 && command -v win_bison >/dev/null 2>&1; then
   powershell.exe -NoProfile -NonInteractive -Command "\
     \$wb = (Get-Command win_bison.exe -ErrorAction Stop).Source; \
@@ -102,7 +110,9 @@ install_cbmc_from_source() {
   CXXFLAGS="${CBMC_SOURCE_CXXFLAGS:--Zi /Oy-}" cmake -S . -B build \
     -G "Visual Studio 17 2022" -A x64 \
     -DWITH_JBMC=OFF \
-    -Dsat_impl="${sat_impl}"
+    -Dsat_impl="${sat_impl}" \
+    -DBISON_EXECUTABLE=bison \
+    -DFLEX_EXECUTABLE=flex
   cmake --build build --config "${build_type}" --parallel
 
   local cbmc_exe_msys
