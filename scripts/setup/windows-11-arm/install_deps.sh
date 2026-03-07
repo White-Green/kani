@@ -125,6 +125,7 @@ install_cbmc_from_source() {
   echo "Installing CBMC from source..."
   local build_type="${CBMC_SOURCE_CMAKE_BUILD_TYPE:-RelWithDebInfo}"
   local sat_impl="${CBMC_SOURCE_SAT_IMPL:-minisat2;cadical}"
+  local exe_linker_flags="${CBMC_SOURCE_CMAKE_EXE_LINKER_FLAGS:-}"
   local bison_exe_msys
   local flex_exe_msys
   local bison_exe_cmake
@@ -149,7 +150,8 @@ install_cbmc_from_source() {
     -DWITH_JBMC=OFF \
     -Dsat_impl="${sat_impl}" \
     -DBISON_EXECUTABLE="${bison_exe_cmake}" \
-    -DFLEX_EXECUTABLE="${flex_exe_cmake}"
+    -DFLEX_EXECUTABLE="${flex_exe_cmake}" \
+    ${exe_linker_flags:+-DCMAKE_EXE_LINKER_FLAGS="${exe_linker_flags}"}
   cmake --build build --config "${build_type}" --parallel
 
   local install_dir_msys="${work_dir}/install"
