@@ -799,5 +799,3 @@ mod tests {
         assert!(result_struct.is_ok());
     }
 }
-
-

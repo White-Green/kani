@@ -371,9 +371,8 @@ impl KaniSession {
         let Some(contract_anchor) = contract_anchor(requested_contract) else { return Ok(vec![]) };
         let mut cmd = Command::new("goto-instrument");
         cmd.arg("--show-symbol-table").arg(Self::normalize_tool_path(file));
-        let output = cmd
-            .output()
-            .context("Failed to invoke goto-instrument for symbol table fallback")?;
+        let output =
+            cmd.output().context("Failed to invoke goto-instrument for symbol table fallback")?;
         if !output.status.success() {
             return Ok(vec![]);
         }
@@ -435,10 +434,3 @@ fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
     let simple = err.to_string();
     text.contains("0xc0000409") || simple.contains("0xc0000409")
 }
-
-
-
-
-
-
-
