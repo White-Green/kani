@@ -119,6 +119,9 @@ for testp in "${TESTS[@]}"; do
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
+    if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--solver --kani-flag="${KANI_REGRESSION_SOLVER}")
+    fi
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
     fi
@@ -151,7 +154,11 @@ fi
 # It should just successfully find the project and specified proof harness. (Then clean up.)
 echo "Testing --manifest-path..."
 FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
-"${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success
+MANIFEST_PATH_ARGS=()
+if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
+  MANIFEST_PATH_ARGS+=(--solver "${KANI_REGRESSION_SOLVER}")
+fi
+"${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success "${MANIFEST_PATH_ARGS[@]}"
 cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 
 # Build all packages in the workspace and ensure no warning is emitted.
@@ -170,3 +177,4 @@ RUSTFLAGS="-D warnings" cargo build --target-dir /tmp/kani_build_warnings --no-d
 echo
 echo "All Kani regression tests completed successfully."
 echo
+

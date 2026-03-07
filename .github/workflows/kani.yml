@@ -21,7 +21,8 @@ jobs:
     env:
       CBMC_BUILD_FROM_SOURCE: "1"
       CBMC_SOURCE_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      CBMC_SOURCE_SAT_IMPL: "minisat2;cadical"
+      CBMC_SOURCE_SAT_IMPL: "minisat2"
+      KANI_REGRESSION_SOLVER: "minisat"
     strategy:
       fail-fast: false
       matrix:
@@ -150,4 +151,5 @@ jobs:
           branch: gh-pages
           folder: docs/book/
           single-commit: true
+
 
