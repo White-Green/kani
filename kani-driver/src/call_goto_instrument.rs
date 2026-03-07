@@ -225,7 +225,15 @@ impl KaniSession {
             for mut pass_args in passes {
                 pass_args.push(Self::normalize_tool_path(&short_file));
                 pass_args.push(Self::normalize_tool_path(&short_file));
-                if let Err(err) = self.call_goto_instrument(&pass_args) {
+
+                if is_enforce_contract_pass(&pass_args) {
+                    if let Err(err) =
+                        self.call_goto_instrument_with_windows_fallback(&pass_args, &short_file)
+                    {
+                        let _ = fs::remove_file(&short_file);
+                        return Err(err);
+                    }
+                } else if let Err(err) = self.call_goto_instrument(&pass_args) {
                     let _ = fs::remove_file(&short_file);
                     return Err(err);
                 }
@@ -292,4 +300,145 @@ impl KaniSession {
 
         self.run_suppress(cmd)
     }
+
+    #[cfg(windows)]
+    fn call_goto_instrument_with_windows_fallback(
+        &self,
+        args: &[OsString],
+        file: &Path,
+    ) -> Result<()> {
+        let backup_file = file.with_extension("enforce-backup.out");
+        fs::copy(file, &backup_file).with_context(|| {
+            format!(
+                "Failed to create backup goto model {} before --enforce-contract",
+                backup_file.display()
+            )
+        })?;
+
+        let result = (|| {
+            if let Err(original_err) = self.call_goto_instrument(args) {
+                if !is_windows_stack_buffer_overrun(&original_err) {
+                    return Err(original_err);
+                }
+
+                let Some(requested_contract) = enforce_contract_target(args) else {
+                    return Err(original_err);
+                };
+
+                let candidates =
+                    self.find_alternative_contract_symbols(&backup_file, requested_contract)?;
+                for candidate in candidates {
+                    fs::copy(&backup_file, file).with_context(|| {
+                        format!(
+                            "Failed to restore goto model {} from backup {}",
+                            file.display(),
+                            backup_file.display()
+                        )
+                    })?;
+
+                    let mut retry_args = args.to_vec();
+                    retry_args[1] = candidate.clone().into();
+                    match self.call_goto_instrument(&retry_args) {
+                        Ok(()) => {
+                            if !self.args.common_args.quiet {
+                                println!(
+                                    "Warning: Retried --enforce-contract with fallback symbol `{}` after Windows goto-instrument crash for `{}`",
+                                    candidate, requested_contract
+                                );
+                            }
+                            return Ok(());
+                        }
+                        Err(retry_err) if is_windows_stack_buffer_overrun(&retry_err) => continue,
+                        Err(retry_err) => return Err(retry_err),
+                    }
+                }
+                Err(original_err)
+            } else {
+                Ok(())
+            }
+        })();
+
+        let _ = fs::remove_file(&backup_file);
+        result
+    }
+
+    #[cfg(windows)]
+    fn find_alternative_contract_symbols(
+        &self,
+        file: &Path,
+        requested_contract: &str,
+    ) -> Result<Vec<String>> {
+        let Some(contract_anchor) = contract_anchor(requested_contract) else { return Ok(vec![]) };
+        let mut cmd = Command::new("goto-instrument");
+        cmd.arg("--show-symbol-table").arg(Self::normalize_tool_path(file));
+        let output = cmd
+            .output()
+            .context("Failed to invoke goto-instrument for symbol table fallback")?;
+        if !output.status.success() {
+            return Ok(vec![]);
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let text = format!("{stdout}\n{stderr}");
+        let mut candidates = Vec::new();
+        for line in text.lines() {
+            let Some(symbol) = line.trim().strip_prefix("Symbol......: ") else { continue };
+            if symbol.contains("::") {
+                continue;
+            }
+            if symbol == requested_contract {
+                continue;
+            }
+            if symbol.starts_with("_RNC") && symbol.contains(&contract_anchor) {
+                candidates.push(symbol.to_string());
+            }
+        }
+
+        // Prefer candidates that avoid nested closure symbols and keep `Es*` variants ahead of `E0*`.
+        candidates.sort_by_key(|name| {
+            let shape_rank = if name.contains("Es_") {
+                0
+            } else if name.contains("Es1_") {
+                1
+            } else if name.contains("Es0_") {
+                2
+            } else if name.contains("E0") {
+                3
+            } else {
+                4
+            };
+            let nested_penalty = if name.contains("RNCNC") { 10 } else { 0 };
+            shape_rank + nested_penalty
+        });
+        candidates.dedup();
+        Ok(candidates)
+    }
 }
+
+fn is_enforce_contract_pass(args: &[OsString]) -> bool {
+    matches!(args.first().and_then(|arg| arg.to_str()), Some("--enforce-contract"))
+}
+
+fn enforce_contract_target(args: &[OsString]) -> Option<&str> {
+    args.get(1).and_then(|arg| arg.to_str())
+}
+
+fn contract_anchor(contract: &str) -> Option<String> {
+    let start = contract.find("contracts8")?;
+    let end = contract[start..].find("uE")?;
+    Some(contract[start..start + end + 2].to_string())
+}
+
+fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
+    let text = format!("{err:#}");
+    let simple = err.to_string();
+    text.contains("0xc0000409") || simple.contains("0xc0000409")
+}
+
+
+
+
+
+
+

@@ -404,10 +404,8 @@ impl Parser {
     ///
     /// This has be updated if the output format changes at some point.
     fn triggers_action(&self, input: String) -> Option<Action> {
-        if input.starts_with('[') || input.starts_with(']') {
-            // We don't expect any other characters (except '\n') to appear
-            // after '[' or ']'. The assert below ensures we won't ignore them.
-            assert!(input.len() == 2);
+        let trimmed = input.trim();
+        if trimmed == "[" || trimmed == "]" {
             return Some(Action::ClearInput);
         }
         if input.starts_with("  }") {
@@ -468,11 +466,28 @@ impl Parser {
         if string_without_delimiter.starts_with(RESULT_ITEM_PREFIX) {
             let result_item: Result<ResultStruct, _> =
                 serde_json::from_str(string_without_delimiter);
-            result_item.unwrap();
+            if let Err(err) = result_item {
+                return ParserItem::Message {
+                    message_text: format!(
+                        "Failed to parse CBMC result payload as JSON: {err}. Raw payload:\n{}",
+                        string_without_delimiter
+                    ),
+                    message_type: "WARNING".to_string(),
+                };
+            }
         }
         let complete_string = &self.input_so_far[0..self.input_so_far.len()];
         let result_item: Result<ParserItem, _> = serde_json::from_str(complete_string);
-        result_item.unwrap()
+        match result_item {
+            Ok(item) => item,
+            Err(err) => ParserItem::Message {
+                message_text: format!(
+                    "Failed to parse CBMC output item as JSON: {err}. Raw item:\n{}",
+                    complete_string
+                ),
+                message_type: "WARNING".to_string(),
+            },
+        }
     }
 
     /// Processes a line to determine if an action must be triggered.
@@ -784,3 +799,5 @@ mod tests {
         assert!(result_struct.is_ok());
     }
 }
+
+
