@@ -1,8 +1,9 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::ffi::OsString;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -29,6 +30,44 @@ impl KaniSession {
     /// Given a set of goto binaries (`inputs`), produce `output` by linking everything
     /// together (including essential libraries). The result is generic over all proof harnesses.
     pub fn link_goto_binary(&self, inputs: &[PathBuf], output: &Path) -> Result<()> {
+        #[cfg(windows)]
+        if inputs.len() == 1 {
+            // Work around goto-cc crashes on Windows with long mangled artifact names.
+            let short_input = output.with_file_name("kani-link-input.symtab.out");
+            let short_output = output.with_file_name("kani-link-output.out");
+
+            fs::copy(&inputs[0], &short_input).with_context(|| {
+                format!(
+                    "Failed to create temporary goto input {} from {}",
+                    short_input.display(),
+                    inputs[0].display()
+                )
+            })?;
+
+            let mut args: Vec<OsString> = Vec::new();
+            args.push(Self::normalize_tool_path(&short_input));
+            args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
+            args.push(Self::normalize_tool_path(&self.kani_lib_c));
+            args.push("-o".into());
+            args.push(Self::normalize_tool_path(&short_output));
+
+            let mut cmd = Command::new("goto-cc");
+            cmd.args(args);
+            let link_result = self.run_suppress(cmd);
+
+            let _ = fs::remove_file(&short_input);
+            link_result?;
+
+            fs::rename(&short_output, output).with_context(|| {
+                format!(
+                    "Failed to move temporary goto output {} to {}",
+                    short_output.display(),
+                    output.display()
+                )
+            })?;
+            return Ok(());
+        }
+
         let mut args: Vec<OsString> = Vec::new();
         args.extend(inputs.iter().map(|x| Self::normalize_tool_path(x)));
         args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
