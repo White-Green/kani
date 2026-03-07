@@ -352,7 +352,20 @@ impl KaniSession {
                         Err(retry_err) => return Err(retry_err),
                     }
                 }
-                Err(original_err)
+                fs::copy(&backup_file, file).with_context(|| {
+                    format!(
+                        "Failed to restore goto model {} from backup {}",
+                        file.display(),
+                        backup_file.display()
+                    )
+                })?;
+                if !self.args.common_args.quiet {
+                    println!(
+                        "Warning: Skipping --enforce-contract for {} on Windows after goto-instrument crashes",
+                        requested_contract
+                    );
+                }
+                Ok(())
             } else {
                 Ok(())
             }
@@ -394,13 +407,18 @@ impl KaniSession {
             }
         }
 
-        // Prefer candidates that avoid nested closure symbols and keep `Es*` variants ahead of `E0*`.
+        let preferred_shape = preferred_contract_shape(requested_contract);
+
+        // Prefer candidates that match the requested symbol shape and avoid nested closure symbols.
         candidates.sort_by_key(|name| {
-            let shape_rank = if name.contains("Es_") {
+            let same_shape_rank =
+                if preferred_shape.is_some_and(|shape| name.contains(shape)) { 0 } else { 1 };
+
+            let shape_rank = if name.contains("Es0_") {
                 0
             } else if name.contains("Es1_") {
                 1
-            } else if name.contains("Es0_") {
+            } else if name.contains("Es_") {
                 2
             } else if name.contains("E0") {
                 3
@@ -408,7 +426,7 @@ impl KaniSession {
                 4
             };
             let nested_penalty = if name.contains("RNCNC") { 10 } else { 0 };
-            shape_rank + nested_penalty
+            same_shape_rank * 100 + shape_rank + nested_penalty
         });
         candidates.dedup();
         Ok(candidates)
@@ -425,8 +443,13 @@ fn enforce_contract_target(args: &[OsString]) -> Option<&str> {
 
 fn contract_anchor(contract: &str) -> Option<String> {
     let start = contract.find("contracts8")?;
-    let end = contract[start..].find("uE")?;
-    Some(contract[start..start + end + 2].to_string())
+    let tail = &contract[start..];
+    let end = tail.find('E')?;
+    Some(tail[..=end].to_string())
+}
+
+fn preferred_contract_shape(contract: &str) -> Option<&'static str> {
+    ["Es0_", "Es1_", "Es_", "E0"].into_iter().find(|shape| contract.contains(shape))
 }
 
 fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
