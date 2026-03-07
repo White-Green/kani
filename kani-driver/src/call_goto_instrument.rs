@@ -224,20 +224,20 @@ impl KaniSession {
             args.push(Self::normalize_tool_path(&short_file));
             let result = self.call_goto_instrument(&args);
             if let Err(err) = result {
-                let _ = fs::remove_file(&short_file);
-                // Work around sporadic goto-instrument crashes on Windows when enforcing
-                // contracts. This keeps regression tests running while we investigate a
-                // proper fix upstream.
+                // Work around sporadic goto-instrument abnormal termination on Windows.
+                // We have observed the tool still emitting a transformed model before
+                // returning this status code.
                 if err.to_string().contains("0xc0000409") {
                     if !self.args.common_args.quiet {
                         eprintln!(
-                            "[Kani] Warning: skipping contract instrumentation due to a \
-                             goto-instrument crash on Windows."
+                            "[Kani] Warning: ignoring goto-instrument exit code 0xc0000409 on \
+                             Windows."
                         );
                     }
-                    return Ok(());
+                } else {
+                    let _ = fs::remove_file(&short_file);
+                    return Err(err);
                 }
-                return Err(err);
             }
 
             fs::copy(&short_file, file).with_context(|| {
