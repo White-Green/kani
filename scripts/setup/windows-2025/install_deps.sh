@@ -24,18 +24,24 @@ fi
 if [[ -d "${WINFLEX_TOOLS_MSYS}" ]]; then
   export PATH="${WINFLEX_TOOLS_MSYS}:$PATH"
 fi
-if ! command -v bison >/dev/null 2>&1 && command -v win_bison >/dev/null 2>&1; then
-  powershell.exe -NoProfile -NonInteractive -Command "\
-    \$wb = (Get-Command win_bison.exe -ErrorAction Stop).Source; \
-    \$dst = Join-Path (Split-Path \$wb -Parent) 'bison.exe'; \
-    Copy-Item -Path \$wb -Destination \$dst -Force"
-fi
-if ! command -v flex >/dev/null 2>&1 && command -v win_flex >/dev/null 2>&1; then
-  powershell.exe -NoProfile -NonInteractive -Command "\
-    \$wf = (Get-Command win_flex.exe -ErrorAction Stop).Source; \
-    \$dst = Join-Path (Split-Path \$wf -Parent) 'flex.exe'; \
-    Copy-Item -Path \$wf -Destination \$dst -Force"
-fi
+resolve_winflex_tool() {
+  local tool_name="$1"
+  local win_tool_name="win_${tool_name}"
+
+  if [[ -x "${WINFLEX_TOOLS_MSYS}/${win_tool_name}.exe" ]]; then
+    echo "${WINFLEX_TOOLS_MSYS}/${win_tool_name}.exe"
+    return 0
+  fi
+  if command -v "${win_tool_name}" >/dev/null 2>&1; then
+    command -v "${win_tool_name}"
+    return 0
+  fi
+  if command -v "${tool_name}" >/dev/null 2>&1; then
+    command -v "${tool_name}"
+    return 0
+  fi
+  return 1
+}
 
 install_cbmc_from_msi() {
   echo "Installing CBMC from MSI..."
@@ -99,8 +105,19 @@ install_cbmc_from_source() {
   echo "Installing CBMC from source..."
   local build_type="${CBMC_SOURCE_CMAKE_BUILD_TYPE:-RelWithDebInfo}"
   local sat_impl="${CBMC_SOURCE_SAT_IMPL:-minisat2;cadical}"
+  local bison_exe_msys
+  local flex_exe_msys
+  local bison_exe_cmake
+  local flex_exe_cmake
   local work_dir
   work_dir="$(mktemp -d)"
+
+  bison_exe_msys="$(resolve_winflex_tool bison)" || { echo "Could not locate bison/win_bison executable"; exit 1; }
+  flex_exe_msys="$(resolve_winflex_tool flex)" || { echo "Could not locate flex/win_flex executable"; exit 1; }
+  "${bison_exe_msys}" --version >/dev/null || { echo "Bison is not executable: ${bison_exe_msys}"; exit 1; }
+  "${flex_exe_msys}" --version >/dev/null || { echo "Flex is not executable: ${flex_exe_msys}"; exit 1; }
+  bison_exe_cmake="$(cygpath -m "${bison_exe_msys}")"
+  flex_exe_cmake="$(cygpath -m "${flex_exe_msys}")"
 
   git clone --branch "cbmc-${CBMC_VERSION}" --depth 1 https://github.com/diffblue/cbmc "${work_dir}"
   pushd "${work_dir}"
@@ -111,8 +128,8 @@ install_cbmc_from_source() {
     -G "Visual Studio 17 2022" -A x64 \
     -DWITH_JBMC=OFF \
     -Dsat_impl="${sat_impl}" \
-    -DBISON_EXECUTABLE=bison \
-    -DFLEX_EXECUTABLE=flex
+    -DBISON_EXECUTABLE="${bison_exe_cmake}" \
+    -DFLEX_EXECUTABLE="${flex_exe_cmake}"
   cmake --build build --config "${build_type}" --parallel
 
   local cbmc_exe_msys
