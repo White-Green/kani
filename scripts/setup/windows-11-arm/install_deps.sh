@@ -16,6 +16,20 @@ echo "Installing CMake..."
 # On Windows ARM runners, the MSI-based cmake.install dependency can fail with
 # generic MSI errors (1603). Use the portable package to avoid MSI.
 choco install -y cmake.portable --no-progress || { echo "CMake portable installation failed"; exit 1; }
+echo "Installing winflexbison..."
+choco install -y winflexbison3 --no-progress || { echo "winflexbison installation failed"; exit 1; }
+if ! command -v bison >/dev/null 2>&1 && command -v win_bison >/dev/null 2>&1; then
+  powershell.exe -NoProfile -NonInteractive -Command "\
+    \$wb = (Get-Command win_bison.exe -ErrorAction Stop).Source; \
+    \$dst = Join-Path (Split-Path \$wb -Parent) 'bison.exe'; \
+    Copy-Item -Path \$wb -Destination \$dst -Force"
+fi
+if ! command -v flex >/dev/null 2>&1 && command -v win_flex >/dev/null 2>&1; then
+  powershell.exe -NoProfile -NonInteractive -Command "\
+    \$wf = (Get-Command win_flex.exe -ErrorAction Stop).Source; \
+    \$dst = Join-Path (Split-Path \$wf -Parent) 'flex.exe'; \
+    Copy-Item -Path \$wf -Destination \$dst -Force"
+fi
 
 install_cbmc_from_msi() {
   echo "Installing CBMC from MSI..."
