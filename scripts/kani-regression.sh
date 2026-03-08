@@ -96,6 +96,45 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   is_windows=true
 fi
 WINDOWS_SUITE_FILTER="${KANI_WINDOWS_SUITE_FILTER:-}"
+WINDOWS_HEARTBEAT_INTERVAL_SEC="${KANI_WINDOWS_REGRESSION_HEARTBEAT_SEC:-60}"
+WINDOWS_HEARTBEAT_PID=""
+
+windows_dump_regression_processes() {
+  powershell.exe -NoProfile -NonInteractive -Command "
+    \$ErrorActionPreference = 'SilentlyContinue'
+    \$procs = Get-Process |
+      Where-Object { \$_.ProcessName -match 'cargo|rustc|kani|cbmc|goto|z3|cvc5|cl|link|mspdbsrv' } |
+      Sort-Object CPU -Descending |
+      Select-Object -First 16 ProcessName, Id, CPU, @{Name='WSMB';Expression={[math]::Round(\$_.WorkingSet64 / 1MB, 1)}}, StartTime
+    if (\$procs) {
+      \$procs | Format-Table -AutoSize | Out-String -Width 220 | Write-Host
+    } else {
+      Write-Host 'No matching regression processes found.'
+    }
+  " || true
+}
+
+windows_start_regression_heartbeat() {
+  local suite="$1"
+  local mode="$2"
+  (
+    while true; do
+      echo "[windows-regression-heartbeat] suite=${suite} mode=${mode} time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+      windows_dump_regression_processes
+      sleep "${WINDOWS_HEARTBEAT_INTERVAL_SEC}"
+    done
+  ) &
+  WINDOWS_HEARTBEAT_PID=$!
+}
+
+windows_stop_regression_heartbeat() {
+  if [[ -n "${WINDOWS_HEARTBEAT_PID}" ]] && kill -0 "${WINDOWS_HEARTBEAT_PID}" >/dev/null 2>&1; then
+    kill "${WINDOWS_HEARTBEAT_PID}" >/dev/null 2>&1 || true
+    wait "${WINDOWS_HEARTBEAT_PID}" 2>/dev/null || true
+  fi
+  WINDOWS_HEARTBEAT_PID=""
+}
+
 
 
 # Build compiletest and print configuration. We pick suite / mode combo so there's no test.
@@ -141,13 +180,28 @@ for testp in "${TESTS[@]}"; do
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
     fi
+    windows_start_regression_heartbeat "$suite" "$mode"
+    set +e
     if command -v timeout >/dev/null 2>&1; then
       timeout --foreground "${WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT}" \
-        cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+        cargo run -p compiletest --quiet -- --suite "$suite" --mode "$mode" \
         "${WINDOWS_COMPILETEST_ARGS[@]}"
+      compiletest_exit=$?
     else
-      cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+      cargo run -p compiletest --quiet -- --suite "$suite" --mode "$mode" \
         "${WINDOWS_COMPILETEST_ARGS[@]}"
+      compiletest_exit=$?
+    fi
+    set -e
+    windows_stop_regression_heartbeat
+    if [[ ${compiletest_exit} -ne 0 ]]; then
+      if [[ ${compiletest_exit} -eq 124 ]]; then
+        echo "Compiletest suite=$suite mode=$mode hit wall-clock timeout (${WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT}s)"
+      else
+        echo "Compiletest suite=$suite mode=$mode failed with exit code ${compiletest_exit}"
+      fi
+      windows_dump_regression_processes
+      exit ${compiletest_exit}
     fi
   else
     echo "Check compiletest suite=$suite mode=$mode"
