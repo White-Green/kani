@@ -20,7 +20,7 @@ jobs:
       contents: read
     env:
       CBMC_BUILD_FROM_SOURCE: "1"
-      CBMC_SOURCE_CMAKE_BUILD_TYPE: "Debug"
+      CBMC_SOURCE_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       CBMC_SOURCE_SAT_IMPL: "minisat2"
       CBMC_SOURCE_CMAKE_EXE_LINKER_FLAGS: "/STACK:33554432"
       KANI_REGRESSION_SOLVER: "minisat"

@@ -119,14 +119,21 @@ for testp in "${TESTS[@]}"; do
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
+    WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT="${KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT:-4200}"
     if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--solver --kani-flag="${KANI_REGRESSION_SOLVER}")
     fi
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
     fi
-    cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+    if command -v timeout >/dev/null 2>&1; then
+      timeout --foreground "${WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT}" \
+        cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
         "${WINDOWS_COMPILETEST_ARGS[@]}"
+    else
+      cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
+        "${WINDOWS_COMPILETEST_ARGS[@]}"
+    fi
   else
     echo "Check compiletest suite=$suite mode=$mode"
     cargo run -p compiletest --quiet -- --suite $suite --mode $mode \
