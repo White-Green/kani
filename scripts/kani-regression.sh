@@ -114,6 +114,48 @@ windows_dump_regression_processes() {
   " || true
 }
 
+windows_collect_timeout_artifacts() {
+  local suite="$1"
+  local mode="$2"
+  local dump_dir_msys="${RUNNER_TEMP:-/tmp}/kani-timeout-dumps"
+  mkdir -p "${dump_dir_msys}"
+
+  echo "Collecting timeout diagnostics for suite=${suite} mode=${mode}"
+  echo "Timeout dump directory: ${dump_dir_msys}"
+
+  powershell.exe -NoProfile -NonInteractive -Command "
+    \$ErrorActionPreference = 'SilentlyContinue'
+    Get-CimInstance Win32_Process |
+      Where-Object { \$_.Name -match 'cargo|rustc|kani-driver|goto-instrument|cbmc|goto' } |
+      Select-Object ProcessId, ParentProcessId, Name, CreationDate, CommandLine |
+      Format-Table -AutoSize | Out-String -Width 260 | Write-Host
+  " || true
+
+  local procdump_bin=""
+  if command -v procdump64 >/dev/null 2>&1; then
+    procdump_bin="procdump64"
+  elif command -v procdump >/dev/null 2>&1; then
+    procdump_bin="procdump"
+  fi
+
+  if [[ -n "${procdump_bin}" ]]; then
+    echo "Using ${procdump_bin} for timeout dumps"
+    mapfile -t dump_pids < <(powershell.exe -NoProfile -NonInteractive -Command "
+      \$ErrorActionPreference = 'SilentlyContinue'
+      Get-Process |
+        Where-Object { \$_.ProcessName -in @('goto-instrument','kani-driver') } |
+        Select-Object -ExpandProperty Id
+    " | tr -d '\r' | sed '/^$/d')
+
+    for pid in "${dump_pids[@]}"; do
+      local dump_path="${dump_dir_msys}/proc-${pid}.dmp"
+      echo "Capturing dump for pid=${pid} -> ${dump_path}"
+      timeout --foreground 30 "${procdump_bin}" -accepteula -ma "${pid}" "${dump_path}" || true
+    done
+  else
+    echo "procdump not found; skipping dump file generation."
+  fi
+}
 windows_start_regression_heartbeat() {
   local suite="$1"
   local mode="$2"
@@ -197,6 +239,7 @@ for testp in "${TESTS[@]}"; do
     if [[ ${compiletest_exit} -ne 0 ]]; then
       if [[ ${compiletest_exit} -eq 124 ]]; then
         echo "Compiletest suite=$suite mode=$mode hit wall-clock timeout (${WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT}s)"
+        windows_collect_timeout_artifacts "$suite" "$mode"
       else
         echo "Compiletest suite=$suite mode=$mode failed with exit code ${compiletest_exit}"
       fi
