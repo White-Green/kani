@@ -95,6 +95,7 @@ is_windows=false
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   is_windows=true
 fi
+WINDOWS_SUITE_FILTER="${KANI_WINDOWS_SUITE_FILTER:-}"
 
 
 # Build compiletest and print configuration. We pick suite / mode combo so there's no test.
@@ -113,13 +114,27 @@ for testp in "${TESTS[@]}"; do
   mode=${testl[1]}
 
   if [[ "${is_windows}" == "true" ]]; then
+    if [[ -n "${WINDOWS_SUITE_FILTER}" ]]; then
+      SUITE_ALLOWED=false
+      IFS=',' read -ra SUITE_FILTERS <<< "${WINDOWS_SUITE_FILTER}"
+      for allowed_suite in "${SUITE_FILTERS[@]}"; do
+        if [[ "${suite}" == "${allowed_suite}" ]]; then
+          SUITE_ALLOWED=true
+          break
+        fi
+      done
+      if [[ "${SUITE_ALLOWED}" != "true" ]]; then
+        echo "Skipping compiletest suite=$suite mode=$mode due to KANI_WINDOWS_SUITE_FILTER=${WINDOWS_SUITE_FILTER}"
+        continue
+      fi
+    fi
     if [[ " ${WINDOWS_SKIPPED_SUITES[*]} " == *" ${suite} "* ]]; then
       echo "Skipping compiletest suite=$suite mode=$mode on Windows"
       continue
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
-    WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT="${KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT:-4200}"
+    WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT="${KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT:-1800}"
     if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--solver --kani-flag="${KANI_REGRESSION_SOLVER}")
     fi
