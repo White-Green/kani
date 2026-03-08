@@ -96,6 +96,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   is_windows=true
 fi
 WINDOWS_SUITE_FILTER="${KANI_WINDOWS_SUITE_FILTER:-}"
+WINDOWS_COMPILETEST_FILTER="${KANI_WINDOWS_COMPILETEST_FILTER:-}"
 WINDOWS_HEARTBEAT_INTERVAL_SEC="${KANI_WINDOWS_REGRESSION_HEARTBEAT_SEC:-60}"
 WINDOWS_HEARTBEAT_PID=""
 
@@ -224,6 +225,11 @@ for testp in "${TESTS[@]}"; do
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
+    WINDOWS_COMPILETEST_FILTERS=()
+    if [[ -n "${WINDOWS_COMPILETEST_FILTER}" ]]; then
+      IFS=',' read -ra WINDOWS_COMPILETEST_FILTERS <<< "${WINDOWS_COMPILETEST_FILTER}"
+      echo "Using compiletest filter(s): ${WINDOWS_COMPILETEST_FILTER}"
+    fi
     WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT="${KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT:-1800}"
     if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--solver --kani-flag="${KANI_REGRESSION_SOLVER}")
@@ -236,10 +242,12 @@ for testp in "${TESTS[@]}"; do
     if command -v timeout >/dev/null 2>&1; then
       timeout --foreground "${WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT}" \
         cargo run -p compiletest --quiet -- --suite "$suite" --mode "$mode" \
+        "${WINDOWS_COMPILETEST_FILTERS[@]}" \
         "${WINDOWS_COMPILETEST_ARGS[@]}"
       compiletest_exit=$?
     else
       cargo run -p compiletest --quiet -- --suite "$suite" --mode "$mode" \
+        "${WINDOWS_COMPILETEST_FILTERS[@]}" \
         "${WINDOWS_COMPILETEST_ARGS[@]}"
       compiletest_exit=$?
     fi
