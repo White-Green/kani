@@ -126,12 +126,52 @@ install_cbmc_from_source() {
   local build_type="${CBMC_SOURCE_CMAKE_BUILD_TYPE:-RelWithDebInfo}"
   local sat_impl="${CBMC_SOURCE_SAT_IMPL:-minisat2;cadical}"
   local exe_linker_flags="${CBMC_SOURCE_CMAKE_EXE_LINKER_FLAGS:-}"
+  local build_parallel="${CBMC_SOURCE_CMAKE_BUILD_PARALLEL_LEVEL:-1}"
+  local build_timeout_sec="${CBMC_SOURCE_BUILD_TIMEOUT_SEC:-5400}"
+  local build_heartbeat_sec="${CBMC_SOURCE_BUILD_HEARTBEAT_SEC:-60}"
+  local build_target="${CBMC_SOURCE_CMAKE_BUILD_TARGET:-}"
   local bison_exe_msys
   local flex_exe_msys
   local bison_exe_cmake
   local flex_exe_cmake
+  local build_heartbeat_pid=""
   local work_dir
   work_dir="$(mktemp -d)"
+
+  dump_build_processes() {
+    echo "CBMC build process snapshot:"
+    powershell.exe -NoProfile -NonInteractive -Command "
+      \$ErrorActionPreference = 'SilentlyContinue'
+      \$procs = Get-Process |
+        Where-Object { \$_.ProcessName -match 'cmake|msbuild|cl|link|mspdbsrv|c2|ninja' } |
+        Sort-Object CPU -Descending |
+        Select-Object -First 12 ProcessName, Id, CPU, @{Name='WSMB';Expression={[math]::Round(\$_.WorkingSet64 / 1MB, 1)}}, StartTime
+      if (\$procs) {
+        \$procs | Format-Table -AutoSize | Out-String -Width 220 | Write-Host
+      } else {
+        Write-Host 'No matching build processes found.'
+      }
+    " || true
+  }
+
+  start_build_heartbeat() {
+    (
+      while true; do
+        echo "[cbmc-build-heartbeat] $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        dump_build_processes
+        sleep "${build_heartbeat_sec}"
+      done
+    ) &
+    build_heartbeat_pid=$!
+  }
+
+  stop_build_heartbeat() {
+    if [[ -n "${build_heartbeat_pid}" ]] && kill -0 "${build_heartbeat_pid}" >/dev/null 2>&1; then
+      kill "${build_heartbeat_pid}" >/dev/null 2>&1 || true
+      wait "${build_heartbeat_pid}" 2>/dev/null || true
+    fi
+    build_heartbeat_pid=""
+  }
 
   bison_exe_msys="$(resolve_winflex_tool bison)" || { echo "Could not locate bison/win_bison executable"; exit 1; }
   flex_exe_msys="$(resolve_winflex_tool flex)" || { echo "Could not locate flex/win_flex executable"; exit 1; }
@@ -152,7 +192,29 @@ install_cbmc_from_source() {
     -DBISON_EXECUTABLE="${bison_exe_cmake}" \
     -DFLEX_EXECUTABLE="${flex_exe_cmake}" \
     ${exe_linker_flags:+-DCMAKE_EXE_LINKER_FLAGS="${exe_linker_flags}"}
-  cmake --build build --config "${build_type}" --parallel
+  echo "CBMC source build settings: type=${build_type} parallel=${build_parallel} timeout=${build_timeout_sec}s heartbeat=${build_heartbeat_sec}s"
+  local build_cmd=(cmake --build build --config "${build_type}" --parallel "${build_parallel}")
+  if [[ -n "${build_target}" ]]; then
+    build_cmd+=(--target "${build_target}")
+    echo "CBMC source build target override: ${build_target}"
+  fi
+
+  start_build_heartbeat
+  set +e
+  timeout --foreground "${build_timeout_sec}" "${build_cmd[@]}"
+  local build_exit=$?
+  set -e
+  stop_build_heartbeat
+  if [[ ${build_exit} -eq 124 ]]; then
+    echo "CBMC source build timed out after ${build_timeout_sec}s"
+    dump_build_processes
+    exit 124
+  fi
+  if [[ ${build_exit} -ne 0 ]]; then
+    echo "CBMC source build failed with exit code ${build_exit}"
+    dump_build_processes
+    exit "${build_exit}"
+  fi
 
   local install_dir_msys="${work_dir}/install"
   local cbmc_bin_msys="${install_dir_msys}/bin"
