@@ -102,12 +102,21 @@ WINDOWS_HEARTBEAT_PID=""
 windows_dump_regression_processes() {
   powershell.exe -NoProfile -NonInteractive -Command "
     \$ErrorActionPreference = 'SilentlyContinue'
+    \$namePattern = 'cargo|rustc|kani|cbmc|goto|z3|cvc5|cl|link|mspdbsrv'
     \$procs = Get-Process |
-      Where-Object { \$_.ProcessName -match 'cargo|rustc|kani|cbmc|goto|z3|cvc5|cl|link|mspdbsrv' } |
+      Where-Object { \$_.ProcessName -match \$namePattern } |
       Sort-Object CPU -Descending |
       Select-Object -First 16 ProcessName, Id, CPU, @{Name='WSMB';Expression={[math]::Round(\$_.WorkingSet64 / 1MB, 1)}}, StartTime
     if (\$procs) {
       \$procs | Format-Table -AutoSize | Out-String -Width 220 | Write-Host
+      \$pidList = \$procs | Select-Object -ExpandProperty Id
+      \$cmds = Get-CimInstance Win32_Process |
+        Where-Object { \$pidList -contains \$_.ProcessId } |
+        Select-Object ProcessId, ParentProcessId, Name, CommandLine
+      if (\$cmds) {
+        Write-Host 'Command lines:'
+        \$cmds | Format-Table -AutoSize | Out-String -Width 260 | Write-Host
+      }
     } else {
       Write-Host 'No matching regression processes found.'
     }
