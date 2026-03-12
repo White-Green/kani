@@ -129,7 +129,35 @@ impl KaniSession {
             Self::normalize_tool_path(file), // output
         ];
 
-        self.call_goto_instrument(args)
+        #[cfg(windows)]
+        {
+            if let Err(err) =
+                self.call_goto_instrument_with_windows_timeout(&args, "--generate-function-body")
+            {
+                if !is_windows_goto_instrument_timeout(&err) {
+                    return Err(err);
+                }
+                if !self.args.common_args.quiet {
+                    println!(
+                        "Warning: Falling back to --drop-unused-functions on Windows after goto-instrument timeout in undefined function body generation"
+                    );
+                }
+                let drop_args: Vec<OsString> = vec![
+                    "--drop-unused-functions".into(),
+                    Self::normalize_tool_path(file), // input
+                    Self::normalize_tool_path(file), // output
+                ];
+                return self.call_goto_instrument_with_windows_timeout(
+                    &drop_args,
+                    "--drop-unused-functions",
+                );
+            }
+            Ok(())
+        }
+        #[cfg(not(windows))]
+        {
+            self.call_goto_instrument(args)
+        }
     }
 
     /// Remove all functions unreachable from the current proof harness.
@@ -320,9 +348,11 @@ impl KaniSession {
         })?;
 
         let result = (|| {
-            if let Err(original_err) = self.call_goto_instrument_with_windows_timeout(args) {
+            if let Err(original_err) =
+                self.call_goto_instrument_with_windows_timeout(args, "--enforce-contract")
+            {
                 let is_stack_overrun = is_windows_stack_buffer_overrun(&original_err);
-                let is_timeout = is_windows_enforce_contract_timeout(&original_err);
+                let is_timeout = is_windows_goto_instrument_timeout(&original_err);
                 if !is_stack_overrun && !is_timeout {
                     return Err(original_err);
                 }
@@ -399,8 +429,12 @@ impl KaniSession {
     }
 
     #[cfg(windows)]
-    fn call_goto_instrument_with_windows_timeout(&self, args: &[OsString]) -> Result<()> {
-        let timeout_secs = std::env::var("KANI_WINDOWS_ENFORCE_CONTRACT_TIMEOUT_SECS")
+    fn call_goto_instrument_with_windows_timeout(
+        &self,
+        args: &[OsString],
+        phase: &str,
+    ) -> Result<()> {
+        let timeout_secs = std::env::var("KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(300);
@@ -414,10 +448,7 @@ impl KaniSession {
         }
 
         let mut child = cmd.spawn().with_context(|| {
-            format!(
-                "Failed to invoke goto-instrument for --enforce-contract with timeout {}s",
-                timeout_secs
-            )
+            format!("Failed to invoke goto-instrument ({}) with timeout {}s", phase, timeout_secs)
         })?;
 
         let status = self.runtime.block_on(async {
@@ -428,7 +459,7 @@ impl KaniSession {
                     Err(std::io::Error::new(
                         std::io::ErrorKind::TimedOut,
                         format!(
-                            "goto-instrument --enforce-contract timed out after {} seconds",
+                            "goto-instrument ({phase}) timed out after {} seconds",
                             timeout_secs
                         ),
                     ))
@@ -527,9 +558,9 @@ fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
 }
 
 #[cfg(windows)]
-fn is_windows_enforce_contract_timeout(err: &anyhow::Error) -> bool {
+fn is_windows_goto_instrument_timeout(err: &anyhow::Error) -> bool {
     let text = format!("{err:#}");
     let simple = err.to_string();
-    text.contains("goto-instrument --enforce-contract timed out")
-        || simple.contains("goto-instrument --enforce-contract timed out")
+    text.contains("goto-instrument (") && text.contains("timed out after")
+        || simple.contains("goto-instrument (") && simple.contains("timed out after")
 }
