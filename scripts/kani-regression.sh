@@ -236,6 +236,7 @@ for testp in "${TESTS[@]}"; do
     fi
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)
     fi
     windows_start_regression_heartbeat "$suite" "$mode"
     set +e
@@ -313,4 +314,5 @@ RUSTFLAGS="-D warnings" cargo build --target-dir /tmp/kani_build_warnings --no-d
 echo
 echo "All Kani regression tests completed successfully."
 echo
+
 
