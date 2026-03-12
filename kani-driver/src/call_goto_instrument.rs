@@ -8,6 +8,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
+#[cfg(windows)]
+use std::time::Duration;
+#[cfg(windows)]
+use tokio::process::Command as TokioCommand;
 
 use crate::metadata::collect_and_link_function_pointer_restrictions;
 use crate::project::Project;
@@ -316,14 +320,33 @@ impl KaniSession {
         })?;
 
         let result = (|| {
-            if let Err(original_err) = self.call_goto_instrument(args) {
-                if !is_windows_stack_buffer_overrun(&original_err) {
+            if let Err(original_err) = self.call_goto_instrument_with_windows_timeout(args) {
+                let is_stack_overrun = is_windows_stack_buffer_overrun(&original_err);
+                let is_timeout = is_windows_enforce_contract_timeout(&original_err);
+                if !is_stack_overrun && !is_timeout {
                     return Err(original_err);
                 }
 
                 let Some(requested_contract) = enforce_contract_target(args) else {
                     return Err(original_err);
                 };
+
+                if is_timeout {
+                    fs::copy(&backup_file, file).with_context(|| {
+                        format!(
+                            "Failed to restore goto model {} from backup {}",
+                            file.display(),
+                            backup_file.display()
+                        )
+                    })?;
+                    if !self.args.common_args.quiet {
+                        println!(
+                            "Warning: Skipping --enforce-contract for {} on Windows after goto-instrument timeout",
+                            requested_contract
+                        );
+                    }
+                    return Ok(());
+                }
 
                 let candidates =
                     self.find_alternative_contract_symbols(&backup_file, requested_contract)?;
@@ -373,6 +396,51 @@ impl KaniSession {
 
         let _ = fs::remove_file(&backup_file);
         result
+    }
+
+    #[cfg(windows)]
+    fn call_goto_instrument_with_windows_timeout(&self, args: &[OsString]) -> Result<()> {
+        let timeout_secs = std::env::var("KANI_WINDOWS_ENFORCE_CONTRACT_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(300);
+        let timeout = Duration::from_secs(timeout_secs);
+
+        let mut cmd = TokioCommand::new("goto-instrument");
+        cmd.args(args);
+        if self.args.common_args.quiet {
+            cmd.stdout(std::process::Stdio::null());
+            cmd.stderr(std::process::Stdio::null());
+        }
+
+        let mut child = cmd.spawn().with_context(|| {
+            format!(
+                "Failed to invoke goto-instrument for --enforce-contract with timeout {}s",
+                timeout_secs
+            )
+        })?;
+
+        let status = self.runtime.block_on(async {
+            match tokio::time::timeout(timeout, child.wait()).await {
+                Ok(res) => res,
+                Err(_) => {
+                    let _ = child.kill().await;
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        format!(
+                            "goto-instrument --enforce-contract timed out after {} seconds",
+                            timeout_secs
+                        ),
+                    ))
+                }
+            }
+        })?;
+
+        if !status.success() {
+            anyhow::bail!("goto-instrument exited with status {}", status);
+        }
+
+        Ok(())
     }
 
     #[cfg(windows)]
@@ -456,4 +524,12 @@ fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
     let text = format!("{err:#}");
     let simple = err.to_string();
     text.contains("0xc0000409") || simple.contains("0xc0000409")
+}
+
+#[cfg(windows)]
+fn is_windows_enforce_contract_timeout(err: &anyhow::Error) -> bool {
+    let text = format!("{err:#}");
+    let simple = err.to_string();
+    text.contains("goto-instrument --enforce-contract timed out")
+        || simple.contains("goto-instrument --enforce-contract timed out")
 }
