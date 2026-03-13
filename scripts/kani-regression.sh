@@ -237,6 +237,7 @@ for testp in "${TESTS[@]}"; do
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--jobs --kani-flag=1)
       export KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS="${KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS:-30}"
       export KANI_WINDOWS_GOTO_INSTRUMENT_TRACE="${KANI_WINDOWS_GOTO_INSTRUMENT_TRACE:-1}"
       export KANI_WINDOWS_SKIP_ENFORCE_CONTRACT="${KANI_WINDOWS_SKIP_ENFORCE_CONTRACT:-1}"
