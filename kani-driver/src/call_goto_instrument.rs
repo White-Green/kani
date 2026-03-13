@@ -9,9 +9,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 #[cfg(windows)]
-use std::time::Duration;
-#[cfg(windows)]
-use tokio::process::Command as TokioCommand;
+use std::time::{Duration, Instant};
 
 use crate::metadata::collect_and_link_function_pointer_restrictions;
 use crate::project::Project;
@@ -452,7 +450,7 @@ impl KaniSession {
             .unwrap_or(300);
         let timeout = Duration::from_secs(timeout_secs);
 
-        let mut cmd = TokioCommand::new("goto-instrument");
+        let mut cmd = Command::new("goto-instrument");
         cmd.args(args);
         if self.args.common_args.quiet {
             cmd.stdout(std::process::Stdio::null());
@@ -462,30 +460,25 @@ impl KaniSession {
         let mut child = cmd.spawn().with_context(|| {
             format!("Failed to invoke goto-instrument ({}) with timeout {}s", phase, timeout_secs)
         })?;
+        let start = Instant::now();
 
-        let status = self.runtime.block_on(async {
-            match tokio::time::timeout(timeout, child.wait()).await {
-                Ok(res) => res,
-                Err(_) => {
-                    let _ = child.kill().await;
-                    Err(std::io::Error::new(
-                        std::io::ErrorKind::TimedOut,
-                        format!(
-                            "goto-instrument ({phase}) timed out after {} seconds",
-                            timeout_secs
-                        ),
-                    ))
+        loop {
+            if let Some(status) = child.try_wait()? {
+                if !status.success() {
+                    anyhow::bail!("goto-instrument exited with status {}", status);
                 }
+                return Ok(());
             }
-        })?;
 
-        if !status.success() {
-            anyhow::bail!("goto-instrument exited with status {}", status);
+            if start.elapsed() >= timeout {
+                let _ = child.kill();
+                let _ = child.wait();
+                anyhow::bail!("goto-instrument ({phase}) timed out after {} seconds", timeout_secs);
+            }
+
+            std::thread::sleep(Duration::from_millis(200));
         }
-
-        Ok(())
     }
-
     #[cfg(windows)]
     fn find_alternative_contract_symbols(
         &self,
