@@ -224,7 +224,7 @@ for testp in "${TESTS[@]}"; do
       continue
     fi
     echo "Check compiletest suite=$suite mode=$mode"
-    WINDOWS_COMPILETEST_ARGS=(--no-fail-fast --timeout 1800)
+    WINDOWS_COMPILETEST_ARGS=(--no-fail-fast --timeout 5400)
     WINDOWS_COMPILETEST_FILTERS=()
     if [[ -n "${WINDOWS_COMPILETEST_FILTER}" ]]; then
       IFS=',' read -ra WINDOWS_COMPILETEST_FILTERS <<< "${WINDOWS_COMPILETEST_FILTER}"

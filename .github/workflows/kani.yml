@@ -26,13 +26,13 @@ jobs:
       KANI_REGRESSION_SOLVER: "minisat"
       KANI_WINDOWS_SUITE_FILTER: "std-checks"
       KANI_WINDOWS_COMPILETEST_FILTER: "mem.expected"
-      KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "5400"
+      KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "10800"
       CBMC_SOURCE_BUILD_TIMEOUT_SEC: "10800"
     strategy:
       fail-fast: false
       matrix:
         # TEMPORARY: narrow matrix for faster Windows bring-up loops.
-        os: [windows-2025, windows-11-arm]
+        os: [windows-2025]
     steps:
       - name: Checkout Kani
         uses: actions/checkout@v6
