@@ -224,7 +224,7 @@ for testp in "${TESTS[@]}"; do
       continue
     fi
     echo "Check compiletest suite=$suite mode=$mode"
-    WINDOWS_COMPILETEST_ARGS=(--quiet --no-fail-fast --timeout 600)
+    WINDOWS_COMPILETEST_ARGS=(--no-fail-fast --timeout 600)
     WINDOWS_COMPILETEST_FILTERS=()
     if [[ -n "${WINDOWS_COMPILETEST_FILTER}" ]]; then
       IFS=',' read -ra WINDOWS_COMPILETEST_FILTERS <<< "${WINDOWS_COMPILETEST_FILTER}"
@@ -237,7 +237,7 @@ for testp in "${TESTS[@]}"; do
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)
-      export KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS="${KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS:-120}"
+      export KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS="${KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS:-30}"
       export KANI_WINDOWS_GOTO_INSTRUMENT_TRACE="${KANI_WINDOWS_GOTO_INSTRUMENT_TRACE:-1}"
     fi
     windows_start_regression_heartbeat "$suite" "$mode"
