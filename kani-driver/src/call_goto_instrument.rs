@@ -401,7 +401,10 @@ impl KaniSession {
 
                     let mut retry_args = args.to_vec();
                     retry_args[1] = candidate.clone().into();
-                    match self.call_goto_instrument(&retry_args) {
+                    match self.call_goto_instrument_with_windows_timeout(
+                        &retry_args,
+                        "--enforce-contract",
+                    ) {
                         Ok(()) => {
                             if !self.args.common_args.quiet {
                                 println!(
@@ -411,7 +414,12 @@ impl KaniSession {
                             }
                             return Ok(());
                         }
-                        Err(retry_err) if is_windows_stack_buffer_overrun(&retry_err) => continue,
+                        Err(retry_err)
+                            if is_windows_stack_buffer_overrun(&retry_err)
+                                || is_windows_goto_instrument_timeout(&retry_err) =>
+                        {
+                            continue;
+                        }
                         Err(retry_err) => return Err(retry_err),
                     }
                 }
