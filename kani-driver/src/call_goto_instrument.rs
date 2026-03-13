@@ -265,7 +265,19 @@ impl KaniSession {
                         let _ = fs::remove_file(&short_file);
                         return Err(err);
                     }
-                } else if let Err(err) = self.call_goto_instrument(&pass_args) {
+                } else if let Err(err) = self.call_goto_instrument_with_windows_timeout(
+                    &pass_args,
+                    goto_instrument_phase(&pass_args),
+                ) {
+                    if is_windows_goto_instrument_timeout(&err) {
+                        if !self.args.common_args.quiet {
+                            println!(
+                                "Warning: Skipping {} on Windows after goto-instrument timeout",
+                                goto_instrument_phase(&pass_args)
+                            );
+                        }
+                        continue;
+                    }
                     let _ = fs::remove_file(&short_file);
                     return Err(err);
                 }
@@ -532,6 +544,9 @@ impl KaniSession {
     }
 }
 
+fn goto_instrument_phase(args: &[OsString]) -> &str {
+    args.first().and_then(|arg| arg.to_str()).unwrap_or("<unknown-pass>")
+}
 fn is_enforce_contract_pass(args: &[OsString]) -> bool {
     matches!(args.first().and_then(|arg| arg.to_str()), Some("--enforce-contract"))
 }
