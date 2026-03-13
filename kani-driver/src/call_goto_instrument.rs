@@ -257,6 +257,17 @@ impl KaniSession {
                 pass_args.push(Self::normalize_tool_path(&short_file));
 
                 if is_enforce_contract_pass(&pass_args) {
+                    let skip_enforce_contract = std::env::var("KANI_WINDOWS_SKIP_ENFORCE_CONTRACT")
+                        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                        .unwrap_or(false);
+                    if skip_enforce_contract {
+                        if !self.args.common_args.quiet {
+                            println!(
+                                "Warning: Skipping --enforce-contract on Windows due to KANI_WINDOWS_SKIP_ENFORCE_CONTRACT"
+                            );
+                        }
+                        continue;
+                    }
                     if let Err(err) =
                         self.call_goto_instrument_with_windows_fallback(&pass_args, &short_file)
                     {

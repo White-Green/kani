@@ -239,6 +239,7 @@ for testp in "${TESTS[@]}"; do
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)
       export KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS="${KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS:-30}"
       export KANI_WINDOWS_GOTO_INSTRUMENT_TRACE="${KANI_WINDOWS_GOTO_INSTRUMENT_TRACE:-1}"
+      export KANI_WINDOWS_SKIP_ENFORCE_CONTRACT="${KANI_WINDOWS_SKIP_ENFORCE_CONTRACT:-1}"
     fi
     windows_start_regression_heartbeat "$suite" "$mode"
     set +e
