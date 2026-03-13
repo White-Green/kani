@@ -237,6 +237,8 @@ for testp in "${TESTS[@]}"; do
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)
+      export KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS="${KANI_WINDOWS_GOTO_INSTRUMENT_TIMEOUT_SECS:-120}"
+      export KANI_WINDOWS_GOTO_INSTRUMENT_TRACE="${KANI_WINDOWS_GOTO_INSTRUMENT_TRACE:-1}"
     fi
     windows_start_regression_heartbeat "$suite" "$mode"
     set +e

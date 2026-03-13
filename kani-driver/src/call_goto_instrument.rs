@@ -449,9 +449,19 @@ impl KaniSession {
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(300);
         let timeout = Duration::from_secs(timeout_secs);
+        let trace_timeout = std::env::var("KANI_WINDOWS_GOTO_INSTRUMENT_TRACE")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
 
         let mut cmd = Command::new("goto-instrument");
         cmd.args(args);
+        if trace_timeout {
+            let rendered_args =
+                args.iter().map(|arg| arg.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            eprintln!(
+                "[kani/windows-timeout] starting phase={phase} timeout_secs={timeout_secs} args={rendered_args}"
+            );
+        }
         if self.args.common_args.quiet {
             cmd.stdout(std::process::Stdio::null());
             cmd.stderr(std::process::Stdio::null());
@@ -471,6 +481,12 @@ impl KaniSession {
             }
 
             if start.elapsed() >= timeout {
+                if trace_timeout {
+                    eprintln!(
+                        "[kani/windows-timeout] timeout phase={phase} elapsed_secs={} killing goto-instrument",
+                        start.elapsed().as_secs()
+                    );
+                }
                 let _ = child.kill();
                 let _ = child.wait();
                 anyhow::bail!("goto-instrument ({phase}) timed out after {} seconds", timeout_secs);
