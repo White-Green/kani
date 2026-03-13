@@ -604,6 +604,7 @@ fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
 fn is_windows_goto_instrument_timeout(err: &anyhow::Error) -> bool {
     let text = format!("{err:#}");
     let simple = err.to_string();
-    text.contains("goto-instrument (") && text.contains("timed out after")
-        || simple.contains("goto-instrument (") && simple.contains("timed out after")
+    let has_timeout = text.contains("timed out after") || simple.contains("timed out after");
+    let has_goto = text.contains("goto-instrument") || simple.contains("goto-instrument");
+    has_timeout && has_goto
 }
