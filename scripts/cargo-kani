@@ -26,7 +26,12 @@ if [[ ( -n "${FLAMEGRAPH:-}" ) && ( "${FLAMEGRAPH}" == "driver" ) ]]; then
     FLAMEGRAPH_DRIVER=1
 fi
 
-if (( FLAMEGRAPH_DRIVER == 0 )); then 
+if (( FLAMEGRAPH_DRIVER == 0 )); then
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        # On Git Bash for Windows, exec -a does not reliably set argv[0].
+        # Pass an explicit subcommand so kani-driver enters CargoKani mode.
+        exec "${KANI_DRIVER}" kani "$@"
+    fi
     exec -a cargo-kani "${KANI_DRIVER}" "$@"
 else 
     mkdir -p "${FLAMEGRAPH_DIR}"
