@@ -440,11 +440,15 @@ impl Parser {
     }
 
     // Returns a `ParserItem` from the input we have accumulated so far. Since
-    // all items except the last one are delimited (with a comma), we first try
-    // to parse the item without the delimiter (i.e., the last character). If
-    // that fails, then we parse the item using the whole input.
+    // all items except the last one are delimited with a comma, we first parse
+    // a normalized string where trailing whitespace and a trailing comma are
+    // removed. If that fails, then we parse the full accumulated input.
     fn parse_item(&self) -> ParserItem {
-        let string_without_delimiter = &self.input_so_far[0..self.input_so_far.len() - 2];
+        // CBMC may emit either LF or CRLF line endings depending on platform/build.
+        // Normalize by trimming trailing whitespace first, then removing the JSON
+        // array delimiter if present.
+        let trimmed = self.input_so_far.trim_end();
+        let string_without_delimiter = trimmed.strip_suffix(',').unwrap_or(trimmed);
         let result_item: Result<ParserItem, _> = serde_json::from_str(string_without_delimiter);
         if let Ok(item) = result_item {
             return item;
@@ -476,7 +480,7 @@ impl Parser {
                 };
             }
         }
-        let complete_string = &self.input_so_far[0..self.input_so_far.len()];
+        let complete_string = self.input_so_far.as_str();
         let result_item: Result<ParserItem, _> = serde_json::from_str(complete_string);
         match result_item {
             Ok(item) => item,
@@ -772,6 +776,17 @@ mod tests {
         );
         let trace_value: Result<TraceValue, _> = serde_json::from_str(&data);
         assert!(trace_value.is_ok());
+    }
+
+    #[test]
+    fn parser_handles_crlf_items_with_trailing_comma() {
+        let parser = Parser {
+            input_so_far: "  {\r\n    \"program\": \"CBMC 6.8.0\"\r\n  },\r\n".to_string(),
+        };
+        match parser.parse_item() {
+            ParserItem::Program { program } => assert_eq!(program, "CBMC 6.8.0"),
+            other => panic!("unexpected parser item: {other:?}"),
+        }
     }
 
     /// Checks that a valid CBMC "result" item can be deserialized into a
