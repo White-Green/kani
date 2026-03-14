@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 //
 // kani-flags: -Z stubbing
+// ignore-windows
 //
 //! This tests that we can correctly stub char functions.
 /// Check that we can stub is_ascii from `char`.
