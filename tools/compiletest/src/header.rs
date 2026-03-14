@@ -178,6 +178,12 @@ impl Config {
     fn parse_edition(&self, line: &str) -> Option<String> {
         self.parse_name_value_directive(line, "edition")
     }
+
+    fn should_ignore_on_windows(&self, line: &str) -> bool {
+        // `--target` may be omitted when compiletest is executed natively.
+        let is_windows_target = self.target.contains("windows") || cfg!(windows);
+        is_windows_target && self.parse_name_directive(line, "ignore-windows")
+    }
 }
 
 pub fn make_test_description<R: Read>(
@@ -221,6 +227,10 @@ pub fn make_test_description<R: Read>(
 
     iter_header(path, src, &mut |ln| {
         should_fail |= config.parse_name_directive(ln, "should-fail");
+        if config.should_ignore_on_windows(ln) {
+            ignore = true;
+            ignore_message = Some("ignore-windows");
+        }
     });
 
     // The `should-fail` annotation doesn't apply to pretty tests,
