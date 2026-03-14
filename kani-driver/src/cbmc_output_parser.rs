@@ -427,6 +427,14 @@ impl Parser {
                 None
             }
             Action::ProcessItem => {
+                // Some CBMC JSON outputs may include closing lines that match
+                // our trigger pattern ("  },") without carrying a full top-level
+                // item in the current buffer. Ignore those standalone closers.
+                let normalized = self.input_so_far.trim();
+                if normalized == "}," || normalized == "}" {
+                    self.clear_input();
+                    return None;
+                }
                 let item = self.parse_item();
                 self.clear_input();
                 Some(item)
@@ -787,6 +795,12 @@ mod tests {
             ParserItem::Program { program } => assert_eq!(program, "CBMC 6.8.0"),
             other => panic!("unexpected parser item: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parser_ignores_standalone_closing_brace_item() {
+        let mut parser = Parser { input_so_far: "  },\r\n".to_string() };
+        assert!(parser.do_action(Action::ProcessItem).is_none());
     }
 
     /// Checks that a valid CBMC "result" item can be deserialized into a
