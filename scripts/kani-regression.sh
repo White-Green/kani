@@ -296,7 +296,7 @@ fi
 echo "Testing --manifest-path..."
 FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
 MANIFEST_PATH_ARGS=()
-if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
+if [[ "${is_windows}" != "true" && -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
   MANIFEST_PATH_ARGS+=(--solver "${KANI_REGRESSION_SOLVER}")
 fi
 "${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success "${MANIFEST_PATH_ARGS[@]}"
