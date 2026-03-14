@@ -41,6 +41,7 @@ mod verify {
         }
     }
 
+    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::swap)]
     pub fn check_swap_primitive() {
         let mut x: u8 = kani::any();
@@ -55,6 +56,7 @@ mod verify {
         contracts::swap(&mut x, &mut y)
     }
 
+    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::swap)]
     pub fn check_swap_adt_no_drop() {
         let mut x: CannotDrop<u8> = kani::any();
@@ -75,6 +77,7 @@ mod verify {
         std::mem::forget(y);
     }
 
+    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::replace)]
     pub fn check_replace_primitive() {
         let mut x: u8 = kani::any();
@@ -86,6 +89,7 @@ mod verify {
         kani::assert(x_before == x_returned, "x_before == x_returned");
     }
 
+    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::replace)]
     pub fn check_replace_adt_no_drop() {
         let mut x: CannotDrop<u8> = kani::any();
