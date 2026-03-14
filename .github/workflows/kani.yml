@@ -19,13 +19,9 @@ jobs:
     permissions:
       contents: read
     env:
-      CBMC_BUILD_FROM_SOURCE: "1"
-      CBMC_SOURCE_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      CBMC_SOURCE_SAT_IMPL: "minisat2"
-      CBMC_SOURCE_CMAKE_EXE_LINKER_FLAGS: "/STACK:33554432"
+      CBMC_BUILD_FROM_SOURCE: "0"
       KANI_REGRESSION_SOLVER: "minisat"
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "10800"
-      CBMC_SOURCE_BUILD_TIMEOUT_SEC: "10800"
     strategy:
       fail-fast: false
       matrix:
