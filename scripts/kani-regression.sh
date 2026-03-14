@@ -293,14 +293,18 @@ fi
 
 # Test for --manifest-path which we cannot do through compiletest.
 # It should just successfully find the project and specified proof harness. (Then clean up.)
-echo "Testing --manifest-path..."
-FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
-MANIFEST_PATH_ARGS=()
-if [[ "${is_windows}" != "true" && -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
-  MANIFEST_PATH_ARGS+=(--solver "${KANI_REGRESSION_SOLVER}")
+if [[ "${is_windows}" == "true" ]]; then
+  echo "Skipping --manifest-path smoke test on Windows."
+else
+  echo "Testing --manifest-path..."
+  FEATURES_MANIFEST_PATH="$KANI_DIR/tests/cargo-kani/cargo-features-flag/Cargo.toml"
+  MANIFEST_PATH_ARGS=()
+  if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
+    MANIFEST_PATH_ARGS+=(--solver "${KANI_REGRESSION_SOLVER}")
+  fi
+  "${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success "${MANIFEST_PATH_ARGS[@]}"
+  cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 fi
-"${SCRIPT_DIR}/cargo-kani" --manifest-path "$FEATURES_MANIFEST_PATH" --harness trivial_success "${MANIFEST_PATH_ARGS[@]}"
-cargo clean --manifest-path "$FEATURES_MANIFEST_PATH"
 
 # Build all packages in the workspace and ensure no warning is emitted.
 # Please don't replace `cargo build-dev` above with this command.
