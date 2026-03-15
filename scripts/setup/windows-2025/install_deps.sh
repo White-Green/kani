@@ -185,39 +185,6 @@ mkdir -p /usr/local/bin
 unzip -o -j "cvc5-${ARCH}-static.zip" "cvc5-${ARCH}-static/bin/cvc5.exe" -d /usr/local/bin
 rm "cvc5-${ARCH}-static.zip"
 
-resolve_solver_executable() {
-  local solver_name="$1"
-  if command -v "${solver_name}.exe" >/dev/null 2>&1; then
-    command -v "${solver_name}.exe"
-    return 0
-  fi
-  if command -v "${solver_name}" >/dev/null 2>&1; then
-    command -v "${solver_name}"
-    return 0
-  fi
-  return 1
-}
-
-resolve_z3_binary() {
-  local z3_tool_bin="/c/ProgramData/chocolatey/lib/z3/tools/bin/z3.exe"
-  if [[ -x "${z3_tool_bin}" ]]; then
-    echo "${z3_tool_bin}"
-    return 0
-  fi
-  resolve_solver_executable z3
-}
-
-CBMC_BIN_MSYS="/c/Program Files/CBMC/bin"
-if [[ -d "${CBMC_BIN_MSYS}" ]]; then
-  z3_solver="$(resolve_z3_binary)" || { echo "Z3 executable not found"; exit 1; }
-  cvc5_solver="/usr/local/bin/cvc5.exe"
-  if [[ ! -x "${cvc5_solver}" ]]; then
-    echo "cvc5 executable not found at ${cvc5_solver}"
-    exit 1
-  fi
-  cp -f "${z3_solver}" "${CBMC_BIN_MSYS}/z3.exe"
-  cp -f "${cvc5_solver}" "${CBMC_BIN_MSYS}/cvc5.exe"
-fi
 # Add paths to GITHUB_PATH if running in CI
 if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
@@ -228,7 +195,7 @@ if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "Successfully updated GITHUB_PATH"
 fi
 /usr/local/bin/cvc5.exe --version
-z3 --version
+"/c/ProgramData/chocolatey/bin/z3.exe" --version || z3 --version
 cbmc.exe --version
 where z3.exe || echo "z3.exe not found in PATH"
 where cvc5.exe || echo "cvc5.exe not found in PATH"
