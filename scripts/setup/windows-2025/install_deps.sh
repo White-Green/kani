@@ -184,6 +184,27 @@ curl -L --remote-name "${CVC5_URL}"
 mkdir -p /usr/local/bin
 unzip -o -j "cvc5-${ARCH}-static.zip" "cvc5-${ARCH}-static/bin/cvc5.exe" -d /usr/local/bin
 rm "cvc5-${ARCH}-static.zip"
+
+resolve_solver_executable() {
+  local solver_name="$1"
+  if command -v "${solver_name}.exe" >/dev/null 2>&1; then
+    command -v "${solver_name}.exe"
+    return 0
+  fi
+  if command -v "${solver_name}" >/dev/null 2>&1; then
+    command -v "${solver_name}"
+    return 0
+  fi
+  return 1
+}
+
+CBMC_BIN_MSYS="/c/Program Files/CBMC/bin"
+if [[ -d "${CBMC_BIN_MSYS}" ]]; then
+  z3_solver="$(resolve_solver_executable z3)" || { echo "Z3 executable not found in PATH"; exit 1; }
+  cvc5_solver="$(resolve_solver_executable cvc5)" || { echo "cvc5 executable not found in PATH"; exit 1; }
+  cp -f "${z3_solver}" "${CBMC_BIN_MSYS}/z3.exe"
+  cp -f "${cvc5_solver}" "${CBMC_BIN_MSYS}/cvc5.exe"
+fi
 # Add paths to GITHUB_PATH if running in CI
 if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
@@ -194,7 +215,10 @@ if [[ -n "${GITHUB_PATH:-}" ]]; then
   echo "Successfully updated GITHUB_PATH"
 fi
 /usr/local/bin/cvc5.exe --version
+z3 --version
 cbmc.exe --version
+where z3.exe || echo "z3.exe not found in PATH"
+where cvc5.exe || echo "cvc5.exe not found in PATH"
 where cbmc.exe || echo "cbmc.exe not found in PATH"
 where goto-cc.exe || echo "goto-cc.exe not found in PATH"
 where goto-cl.exe || echo "goto-cl.exe not found in PATH"

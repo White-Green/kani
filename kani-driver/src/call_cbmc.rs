@@ -26,9 +26,9 @@ use crate::coverage::cov_results::{CoverageRegion, CoverageTerm};
 use crate::session::KaniSession;
 use crate::util::render_command;
 
-/// Windows prebuilt CBMC packages in CI do not ship CaDiCaL.
+/// Use Z3 by default on Windows to avoid MiniSAT fallback issues.
 #[cfg(windows)]
-static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Cadical;
+static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Z3;
 
 /// We use CaDiCaL by default on non-Windows platforms.
 #[cfg(not(windows))]
