@@ -20,7 +20,7 @@ jobs:
       contents: read
     env:
       CBMC_BUILD_FROM_SOURCE: "0"
-      KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "10800"
+      KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "1800"
     strategy:
       fail-fast: false
       matrix:
