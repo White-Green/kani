@@ -19,9 +19,7 @@ jobs:
     permissions:
       contents: read
     env:
-      CBMC_BUILD_FROM_SOURCE: "1"
-      CBMC_SOURCE_CMAKE_BUILD_TYPE: "Release"
-      CBMC_SOURCE_SAT_IMPL: "minisat2"
+      CBMC_BUILD_FROM_SOURCE: "0"
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "10800"
     strategy:
       fail-fast: false
