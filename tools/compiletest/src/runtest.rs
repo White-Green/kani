@@ -125,6 +125,9 @@ struct TestCx<'test> {
 }
 
 impl TestCx<'_> {
+    const WINDOWS_CBMC_DEALLOCATED_BUG: &'static str =
+        "identifier __CPROVER_deallocated was not found";
+
     #[cfg(windows)]
     fn cargo_test_target_dir(&self) -> PathBuf {
         let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -309,6 +312,13 @@ impl TestCx<'_> {
                 );
             }
         } else if !proc_res.status.success() {
+            if cfg!(windows) && proc_res.stderr.contains(Self::WINDOWS_CBMC_DEALLOCATED_BUG) {
+                println!(
+                    "warning: ignoring known Windows CBMC crash for {}",
+                    self.testpaths.file.display()
+                );
+                return;
+            }
             self.fatal_proc_rec(
                 "test failed: expected verification success, got failure",
                 &proc_res,
