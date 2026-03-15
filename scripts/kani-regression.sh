@@ -222,6 +222,9 @@ for testp in "${TESTS[@]}"; do
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--no-fail-fast --timeout 5400)
+    if [[ "${KANI_WINDOWS_COMPILETEST_VERBOSE:-0}" == "1" ]]; then
+      WINDOWS_COMPILETEST_ARGS+=(--verbose)
+    fi
     WINDOWS_COMPILETEST_FILTERS=()
     if [[ -n "${WINDOWS_COMPILETEST_FILTER}" ]]; then
       IFS=',' read -ra WINDOWS_COMPILETEST_FILTERS <<< "${WINDOWS_COMPILETEST_FILTER}"
@@ -315,4 +318,3 @@ RUSTFLAGS="-D warnings" cargo build --target-dir /tmp/kani_build_warnings --no-d
 echo
 echo "All Kani regression tests completed successfully."
 echo
-
