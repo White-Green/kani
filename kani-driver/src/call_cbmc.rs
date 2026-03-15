@@ -18,7 +18,7 @@ use tokio::process::Command as TokioCommand;
 use crate::args::common::Verbosity;
 use crate::args::{OutputFormat, VerificationArgs};
 use crate::cbmc_output_parser::{
-    CheckStatus, Property, VerificationOutput, extract_results, process_cbmc_output,
+    CheckStatus, ParserItem, Property, VerificationOutput, extract_results, process_cbmc_output,
 };
 use crate::cbmc_property_renderer::{format_coverage, format_result, kani_cbmc_output_filter};
 use crate::coverage::cov_results::{CoverageCheck, CoverageResults};
@@ -325,7 +325,7 @@ impl VerificationResult {
         start_time: Instant,
     ) -> VerificationResult {
         let runtime = start_time.elapsed();
-        let (_, results) = extract_results(output.processed_items);
+        let (items, results) = extract_results(output.processed_items);
 
         if let Some(results) = results {
             let (status, failed_properties) =
@@ -338,6 +338,18 @@ impl VerificationResult {
                 runtime,
                 generated_concrete_test: false,
                 coverage_results,
+            }
+        } else if output.process_status == 0 && contains_prover_status(&items) {
+            // Some CBMC builds may omit a top-level `result` item when there are
+            // no generated properties. Treat that as a successful verification as
+            // long as CBMC exited cleanly and reported a prover status.
+            VerificationResult {
+                status: VerificationStatus::Success,
+                failed_properties: FailedProperties::None,
+                results: Ok(vec![]),
+                runtime,
+                generated_concrete_test: false,
+                coverage_results: None,
             }
         } else {
             // We never got results from CBMC - something went wrong (e.g. crash) so it's failure
@@ -430,6 +442,10 @@ impl VerificationResult {
             }
         }
     }
+}
+
+fn contains_prover_status(items: &[ParserItem]) -> bool {
+    items.iter().any(|item| matches!(item, ParserItem::ProverStatus { .. }))
 }
 
 /// We decide if verification succeeded based on properties, not (typically) on exit code
@@ -582,5 +598,24 @@ mod tests {
         assert_eq!(resolve(&args_only_default, &harness_some), Some(3));
         assert_eq!(resolve(&args_only_harness, &harness_some), Some(1));
         assert_eq!(resolve(&args_both, &harness_some), Some(1));
+    }
+
+    #[test]
+    fn verification_succeeds_when_exit_zero_and_only_prover_status_is_present() {
+        let output = VerificationOutput {
+            process_status: 0,
+            processed_items: vec![ParserItem::ProverStatus { _c_prover_status: "SUCCESS".into() }],
+        };
+        let result = VerificationResult::from(output, false, Instant::now());
+        assert!(matches!(result.status, VerificationStatus::Success));
+        assert!(matches!(result.results, Ok(ref properties) if properties.is_empty()));
+    }
+
+    #[test]
+    fn verification_fails_when_exit_zero_and_no_results_or_prover_status_are_present() {
+        let output = VerificationOutput { process_status: 0, processed_items: vec![] };
+        let result = VerificationResult::from(output, false, Instant::now());
+        assert!(matches!(result.status, VerificationStatus::Failure));
+        assert!(matches!(result.results, Err(ExitStatus::Other(0))));
     }
 }
