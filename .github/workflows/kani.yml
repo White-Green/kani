@@ -19,11 +19,8 @@ jobs:
     permissions:
       contents: read
     env:
-      CBMC_BUILD_FROM_SOURCE: "1"
-      CBMC_SOURCE_SAT_IMPL: "minisat2"
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "5400"
-      KANI_WINDOWS_COMPILETEST_FILTER: "option.rs"
-      KANI_WINDOWS_COMPILETEST_VERBOSE: "1"
+      KANI_REGRESSION_SOLVER: "z3"
     strategy:
       fail-fast: false
       matrix:

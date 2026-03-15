@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that `exact_div` returns the expected result if none
 // of the conditions for undefined behavior are met

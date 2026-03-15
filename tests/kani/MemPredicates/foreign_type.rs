@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // kani-flags: -Z c-ffi
 //! We used to check that Kani's memory predicates return that it's not safe to access pointers
 //! with foreign types since it cannot compute its size, but with the introduction of

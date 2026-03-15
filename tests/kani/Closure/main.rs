@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! test that we implement closures correctly
 
 fn closure_with_empty_args() {

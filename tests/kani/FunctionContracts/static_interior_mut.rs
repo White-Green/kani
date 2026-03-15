@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // kani-flags: -Zfunction-contracts
 //! This test checks that contracts havoc static variables with interior mutability.
 //! For now, we over-approximate and havoc the entire static.

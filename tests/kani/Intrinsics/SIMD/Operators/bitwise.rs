@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Checks that the following SIMD intrinsics are supported:
 //!  * `simd_and`

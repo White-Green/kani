@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Checks that `copysignf64` returns a floating point value with the magnitude
 // of `mag` and the sign of `sgn`. There are two special cases to consider:

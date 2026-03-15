@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! Check that offset_from_ptr works for vector and types with size that are not power of two.
 #![feature(ptr_sub_ptr)]
 

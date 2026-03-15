@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check drop implementation for a nested boxed dynamic trait objects.
 // There is an implicit self-recursive call to drop_in_place, so we

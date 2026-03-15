@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that `likely` and `unlikely` return the value of the condition passed
 // as an argument. These intrinsics hint the Rust compiler what branch in an

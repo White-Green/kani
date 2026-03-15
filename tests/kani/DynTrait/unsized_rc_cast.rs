@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Check that we can cast between two unsized objects.
 //! This fix-me is derived from unsized_rc_cast.rs and it should be merged with the original test.

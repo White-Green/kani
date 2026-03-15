@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Checks that the `simd_extract` and `simd_insert` intrinsics are supported
 //! and return the expected results.

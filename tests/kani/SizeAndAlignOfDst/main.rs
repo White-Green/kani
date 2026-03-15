@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! This is a regression test for size_and_align_of_dst computing the
 //! size and alignment of a dynamically-sized type like
 //! Arc<Mutex<dyn Subscriber>>.

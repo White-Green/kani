@@ -1,4 +1,5 @@
 // Copyright rustc Contributors
+// ignore-windows
 // Adapted from rustc: https://github.com/rust-lang/rust/tree/5f98537eb7b5f42c246a52c550813c3cff336069/src/test/ui/coroutine/smoke-resume-args.rs
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT

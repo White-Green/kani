@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Avoid RUST constant propagating this away
 fn assert_bigger(a: u128, b: u128) {

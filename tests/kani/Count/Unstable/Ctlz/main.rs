@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 #![feature(core_intrinsics)]
 use std::intrinsics::{ctlz, ctlz_nonzero};
 

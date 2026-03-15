@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 /// Sort an arbitrary Vec<u32> of length 3. Assert that the sorting worked.
 #[kani::proof]

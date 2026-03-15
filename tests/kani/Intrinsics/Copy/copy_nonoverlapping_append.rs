@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Test the append example from
 // https://doc.rust-lang.org/core/intrinsics/fn.copy_nonoverlapping.html

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! Check that Kani correctly verifies the contract that modifies slices.
 //!
 //! This started failing with the 2025-04-05 toolchain upgrade

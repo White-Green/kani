@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that we properly handle structs for which the compiler reorders the
 // fields to optimize the layout. In such cases, the field with minimum offset

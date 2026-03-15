@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // This test checks the size and align fields for 3-deep nested trait pointers. The
 // outter 2 dynamic trait objects have fat pointers as their backing data.

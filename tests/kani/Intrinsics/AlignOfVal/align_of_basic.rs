@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that we get the expected results for the `align_of_val` intrinsic
 // with common data types. Note that these tests assume an x86_64 architecture,

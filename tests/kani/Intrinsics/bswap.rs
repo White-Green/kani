@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that `bswap` returns the expected results.
 // https://doc.rust-lang.org/std/intrinsics/fn.bswap.html

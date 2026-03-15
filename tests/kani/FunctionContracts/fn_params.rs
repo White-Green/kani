@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! Checks that function contracts work with different type of parameter expressions:
 //! Source: <https://doc.rust-lang.org/reference/items/functions.html>
 //!

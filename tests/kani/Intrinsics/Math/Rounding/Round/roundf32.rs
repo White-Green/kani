@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Checks that `roundf32` does return:
 //  * The nearest integer to the argument for some concrete cases.

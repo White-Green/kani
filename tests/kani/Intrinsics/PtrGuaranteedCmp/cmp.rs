@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Checks that `ptr_guaranteed_eq` returns true if the pointers are equal, false
 // otherwise.

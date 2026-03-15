@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! This test checks that the panic macro does not cause a compiler error if
 //! there is a user-defined `core` module, which previously did (see

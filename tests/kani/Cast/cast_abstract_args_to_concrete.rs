@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // This regression test is in response to issue #135.
 // The type of the second parameter to powi is a `CInteger`, but

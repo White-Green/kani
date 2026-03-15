@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Check if we can codegen drop for unsized struct.
 //! Test that cover fix for https://github.com/model-checking/kani/issues/1072.

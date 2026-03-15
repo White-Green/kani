@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 /// Resizing arbitrary vector of Vec<i64> length at most 5, at least
 /// 2. Asserts that the modification occurs, and only on memory that

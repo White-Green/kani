@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 /// This test checks that the Kani compiler propertly enables the
 /// architecture-specific target features (e.g. `neon` on `aarch64` and

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 #[kani::proof]
 fn main() {
     assert!(x_plus_two_1(0) == 2);

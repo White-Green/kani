@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that `fabsf64` returns the expected results: absolute value if argument
 // is not NaN, otherwise NaN

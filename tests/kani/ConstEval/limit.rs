@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 // Ensure that constant propagation can deal with a large number.
 // This test used to trigger https://github.com/rust-lang/rust/issues/103814

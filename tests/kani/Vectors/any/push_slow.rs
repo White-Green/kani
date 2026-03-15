@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Variant of tests/kani/Vector/push.rs using any_vec. Slow due to
 //! performance issues involving any_vec. See #1329

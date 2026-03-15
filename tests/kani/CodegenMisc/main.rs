@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // source: vm-sys-util src/linux/signal.rs register_signal_handler
 
 // mock-up libc

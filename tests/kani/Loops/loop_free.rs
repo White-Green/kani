@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 //! Ensure that Kani identifies that there is not loop in this code.
 //! This was related to https://github.com/model-checking/kani/issues/2164

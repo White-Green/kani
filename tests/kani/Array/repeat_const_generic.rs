@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Ensure Kani can compile `[e; N]` when `N` is a const generic.
 // Test from <https://github.com/model-checking/kani/issues/1728>

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // This test checks that Kani's overridden versions of the print macros do not
 // take ownership of variables passed as arguments

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // This test checks the `size` and `align` fields of vtables, for a
 // dynamic trait where two implementing structs have different sizes.

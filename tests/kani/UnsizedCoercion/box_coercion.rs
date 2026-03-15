@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //! Check the basic coercion when using boxes.
 //! Tests are broken down into different crates to ensure that the reachability works for each case.
 

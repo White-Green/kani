@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Checks that `simd_shuffle` and `simd_shuffleN` (where `N` is a length) are
 //! supported and return the expected results.

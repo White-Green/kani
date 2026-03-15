@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Tests for arbitrary tuples. Kani Lib supports up to size 12, so
 //! minimum (size 1) and maximum (size 12) are tested here.

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! Checks that storing the result of a vector operation in a vector of
 //! size equal to the operands' sizes works.

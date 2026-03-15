@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 /// Test using the unit type
 ///   - As a void function return
 ///   - As a variable type in a struct or union

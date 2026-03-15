@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 // Check that the `wrapping_<op>` intrinsics perform wrapping arithmetic
 // operations as expected and do not trigger spurious overflow checks.

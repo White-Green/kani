@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that we can verify test harnesses using the --tests argument.
 // Note: We need to provide the compile-flags because compile test runs rustc directly and via kani.

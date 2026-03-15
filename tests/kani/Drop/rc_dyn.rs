@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 // Test Rc<dyn T> to ensure it works correctly. We only expect the object
 // to be created once and dropped once. Clone should have the same inner

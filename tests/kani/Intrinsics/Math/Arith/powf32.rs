@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 // This test will trigger use of the `powf32` intrinsic, which in turn invoke functions modelled in
 // CBMC's math library. These models use approximations as documented in CBMC's source code:

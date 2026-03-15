@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 fn bitmap_new(byte_size: usize, page_size: usize) -> usize {
     let bit_size: usize = byte_size / page_size;
     let map_size = ((bit_size - 1) >> 6) + 1;

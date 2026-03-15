@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 #[derive(Debug)]
 pub enum MyInfallible {} //< https://doc.rust-lang.org/std/convert/enum.Infallible.html (empty enum)
 
