@@ -28,7 +28,7 @@ use crate::util::render_command;
 
 /// Windows prebuilt CBMC packages in CI do not ship CaDiCaL.
 #[cfg(windows)]
-static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Minisat;
+static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Cvc5;
 
 /// We use CaDiCaL by default on non-Windows platforms.
 #[cfg(not(windows))]
@@ -234,11 +234,6 @@ impl KaniSession {
             args.push("--no-bounds-check".into());
             args.push("--no-pointer-check".into());
         }
-
-        // Windows CBMC prebuilt binaries have shown unstable behavior on the
-        // default MiniSAT path. Prefer the built-in SMT2 backend.
-        #[cfg(windows)]
-        args.push("--cprover-smt2".into());
 
         if self.args.checks.overflow_on() {
             args.push("--nan-check".into());
