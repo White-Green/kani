@@ -234,6 +234,12 @@ impl KaniSession {
             args.push("--no-bounds-check".into());
             args.push("--no-pointer-check".into());
         }
+
+        // Windows CBMC prebuilt binaries have shown unstable behavior on the
+        // default MiniSAT path. Prefer the built-in SMT2 backend.
+        #[cfg(windows)]
+        args.push("--cprover-smt2".into());
+
         if self.args.checks.overflow_on() {
             args.push("--nan-check".into());
 
@@ -297,11 +303,6 @@ impl KaniSession {
             CbmcSolver::Minisat => {
                 // Minisat is currently CBMC's default solver, so no need to
                 // pass any arguments
-                //
-                // On Windows, MiniSAT simplification has been observed to
-                // trigger "SAT checker inconsistent" failures in CI.
-                #[cfg(windows)]
-                args.push("--no-sat-preprocessor".into());
             }
             CbmcSolver::Z3 => {
                 args.push("--z3".into());
