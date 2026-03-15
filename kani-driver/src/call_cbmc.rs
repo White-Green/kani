@@ -26,11 +26,9 @@ use crate::coverage::cov_results::{CoverageRegion, CoverageTerm};
 use crate::session::KaniSession;
 use crate::util::render_command;
 
-/// Preferred default SAT solver for this host platform.
-/// Windows prebuilt CBMC packages in CI do not ship CaDiCaL, and falling back
-/// to MiniSAT has produced frequent "SAT checker inconsistent" failures.
+/// Windows prebuilt CBMC packages in CI do not ship CaDiCaL.
 #[cfg(windows)]
-static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Z3;
+static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Minisat;
 
 /// We use CaDiCaL by default on non-Windows platforms.
 #[cfg(not(windows))]
@@ -299,6 +297,11 @@ impl KaniSession {
             CbmcSolver::Minisat => {
                 // Minisat is currently CBMC's default solver, so no need to
                 // pass any arguments
+                //
+                // On Windows, MiniSAT simplification has been observed to
+                // trigger "SAT checker inconsistent" failures in CI.
+                #[cfg(windows)]
+                args.push("--no-sat-preprocessor".into());
             }
             CbmcSolver::Z3 => {
                 args.push("--z3".into());
