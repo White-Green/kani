@@ -201,7 +201,11 @@ resolve_solver_executable() {
 CBMC_BIN_MSYS="/c/Program Files/CBMC/bin"
 if [[ -d "${CBMC_BIN_MSYS}" ]]; then
   z3_solver="$(resolve_solver_executable z3)" || { echo "Z3 executable not found in PATH"; exit 1; }
-  cvc5_solver="$(resolve_solver_executable cvc5)" || { echo "cvc5 executable not found in PATH"; exit 1; }
+  cvc5_solver="/usr/local/bin/cvc5.exe"
+  if [[ ! -x "${cvc5_solver}" ]]; then
+    echo "cvc5 executable not found at ${cvc5_solver}"
+    exit 1
+  fi
   cp -f "${z3_solver}" "${CBMC_BIN_MSYS}/z3.exe"
   cp -f "${cvc5_solver}" "${CBMC_BIN_MSYS}/cvc5.exe"
 fi
