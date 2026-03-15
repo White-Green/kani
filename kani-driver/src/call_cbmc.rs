@@ -26,8 +26,14 @@ use crate::coverage::cov_results::{CoverageRegion, CoverageTerm};
 use crate::session::KaniSession;
 use crate::util::render_command;
 
-/// We will use Cadical by default since it performed better than MiniSAT in our analysis.
-/// Note: Kissat was marginally better, but it is an external solver which could be more unstable.
+/// Preferred default SAT solver for this host platform.
+/// Windows prebuilt CBMC packages in CI do not ship CaDiCaL, and falling back
+/// to MiniSAT has produced frequent "SAT checker inconsistent" failures.
+#[cfg(windows)]
+static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Z3;
+
+/// We use CaDiCaL by default on non-Windows platforms.
+#[cfg(not(windows))]
 static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Cadical;
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq)]
