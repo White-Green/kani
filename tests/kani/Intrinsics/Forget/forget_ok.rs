@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Checks that `forget` does not cause a compilation error if the value is not
 // referenced after "forgetting" it

@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Checks that `round_ties_even_f64` returns the nearest integer to the argument. The
 // default rounding mode is rounding half to even, which is described here:

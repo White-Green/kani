@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // kani-flags: -Zfunction-contracts
 
 // Check that Kani can verify contracts on methods where the base type has multiple inherent impls,

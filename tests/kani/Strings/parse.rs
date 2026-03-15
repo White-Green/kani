@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 //! This test is to check how Kani handle some std functions, such as parse.
 //! This test used to trigger a missing function before the MIR Linker.

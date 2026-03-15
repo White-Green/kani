@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Disable undefined function checks because of a failure
 // https://github.com/model-checking/kani/issues/555

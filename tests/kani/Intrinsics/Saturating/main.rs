@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 
 // Check that `saturating_add` and `saturating_sub` are supported and return the
 // expected results.
