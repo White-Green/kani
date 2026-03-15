@@ -198,9 +198,18 @@ resolve_solver_executable() {
   return 1
 }
 
+resolve_z3_binary() {
+  local z3_tool_bin="/c/ProgramData/chocolatey/lib/z3/tools/bin/z3.exe"
+  if [[ -x "${z3_tool_bin}" ]]; then
+    echo "${z3_tool_bin}"
+    return 0
+  fi
+  resolve_solver_executable z3
+}
+
 CBMC_BIN_MSYS="/c/Program Files/CBMC/bin"
 if [[ -d "${CBMC_BIN_MSYS}" ]]; then
-  z3_solver="$(resolve_solver_executable z3)" || { echo "Z3 executable not found in PATH"; exit 1; }
+  z3_solver="$(resolve_z3_binary)" || { echo "Z3 executable not found"; exit 1; }
   cvc5_solver="/usr/local/bin/cvc5.exe"
   if [[ ! -x "${cvc5_solver}" ]]; then
     echo "cvc5 executable not found at ${cvc5_solver}"
