@@ -28,7 +28,7 @@ use crate::util::render_command;
 
 /// Windows prebuilt CBMC packages in CI do not ship CaDiCaL.
 #[cfg(windows)]
-static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Cvc5;
+static DEFAULT_SOLVER: CbmcSolver = CbmcSolver::Cadical;
 
 /// We use CaDiCaL by default on non-Windows platforms.
 #[cfg(not(windows))]
