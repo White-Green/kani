@@ -522,8 +522,15 @@ pub fn is_test(file_name: &OsString) -> bool {
 
 fn make_test(config: &Config, testpaths: &TestPaths, inputs: &Stamp) -> test::TestDescAndFn {
     let test_path = PathBuf::from(&testpaths.file);
+    let ignore_parse_path = if config.mode == Mode::Exec && test_path.is_dir() {
+        test_path.join("config.yml")
+    } else {
+        test_path.clone()
+    };
 
-    let src_file = std::fs::File::open(&test_path).expect("open test file to parse ignores");
+    let src_file = std::fs::File::open(&ignore_parse_path).unwrap_or_else(|e| {
+        panic!("open test file to parse ignores (`{}`): {}", ignore_parse_path.display(), e)
+    });
     let test_name = crate::make_test_name(config, testpaths);
     let mut desc = make_test_description(config, test_name, &test_path, src_file);
     // Ignore tests that already run and are up to date with respect to inputs.
