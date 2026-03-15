@@ -234,6 +234,12 @@ for testp in "${TESTS[@]}"; do
     if [[ -n "${KANI_REGRESSION_SOLVER:-}" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--solver --kani-flag="${KANI_REGRESSION_SOLVER}")
     fi
+    if [[ -n "${KANI_REGRESSION_OBJECT_BITS:-}" ]]; then
+      WINDOWS_COMPILETEST_ARGS+=(
+        --kani-flag=--object-bits
+        --kani-flag="${KANI_REGRESSION_OBJECT_BITS}"
+      )
+    fi
     if [[ "$suite" == "std-checks" ]]; then
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--verbose)
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-undefined-function-checks)

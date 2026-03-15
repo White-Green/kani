@@ -23,7 +23,8 @@ jobs:
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "5400"
       KANI_WINDOWS_COMPILETEST_FILTER: "option.rs"
       KANI_WINDOWS_COMPILETEST_VERBOSE: "1"
-      KANI_REGRESSION_SOLVER: "cvc5"
+      KANI_REGRESSION_SOLVER: "z3"
+      KANI_REGRESSION_OBJECT_BITS: "20"
     strategy:
       fail-fast: false
       matrix:
