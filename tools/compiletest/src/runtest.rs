@@ -454,7 +454,7 @@ impl TestCx<'_> {
 
         // Check if the `script` file exists
         let script_rel_path = PathBuf::from(exec_config.script);
-        let script_path = self.testpaths.file.join(script_rel_path);
+        let script_path = self.testpaths.file.join(&script_rel_path);
         if !script_path.exists() {
             let err_msg = format!("test failed: couldn't find script in {}", script_path.display());
             fatal_error(&err_msg);
@@ -476,9 +476,19 @@ impl TestCx<'_> {
             None
         };
 
-        // Create the command `time script` and run it from the test directory
-        let mut script_path_cmd = Command::new("time");
-        script_path_cmd.arg(script_path).current_dir(&self.testpaths.file);
+        // Use `bash` for `.sh` scripts on Windows where `time` may be unavailable.
+        let mut script_path_cmd = if cfg!(windows)
+            && script_path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("sh"))
+        {
+            let mut cmd = Command::new("bash");
+            cmd.arg(&script_rel_path);
+            cmd
+        } else {
+            let mut cmd = Command::new("time");
+            cmd.arg(&script_path);
+            cmd
+        };
+        script_path_cmd.current_dir(&self.testpaths.file);
         let proc_res = self.compose_and_run(script_path_cmd);
 
         // Compare with expected output if it was provided

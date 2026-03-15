@@ -89,6 +89,7 @@ WINDOWS_SKIPPED_SUITES=(
   "cargo-kani"
   "cargo-ui"
   "kani-docs"
+  "script-based-pre"
   "firecracker"
   "prusti"
   "smack"
