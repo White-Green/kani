@@ -132,6 +132,8 @@ install_cbmc_from_source() {
   local flex_exe_msys
   local bison_exe_cmake
   local flex_exe_cmake
+  local sh_exe_msys
+  local sh_exe_cmake
   local work_dir
   work_dir="$(mktemp -d)"
 
@@ -141,6 +143,12 @@ install_cbmc_from_source() {
   "${flex_exe_msys}" --version >/dev/null || { echo "Flex is not executable: ${flex_exe_msys}"; exit 1; }
   bison_exe_cmake="$(cygpath -m "${bison_exe_msys}")"
   flex_exe_cmake="$(cygpath -m "${flex_exe_msys}")"
+  sh_exe_msys="$(command -v sh || true)"
+  if [[ -n "${sh_exe_msys}" ]]; then
+    sh_exe_cmake="$(cygpath -m "${sh_exe_msys}")"
+  else
+    sh_exe_cmake=""
+  fi
 
   git clone --branch "cbmc-${CBMC_VERSION}" --depth 1 https://github.com/diffblue/cbmc "${work_dir}"
   pushd "${work_dir}"
@@ -153,6 +161,7 @@ install_cbmc_from_source() {
     -Dsat_impl="${sat_impl}" \
     -DBISON_EXECUTABLE="${bison_exe_cmake}" \
     -DFLEX_EXECUTABLE="${flex_exe_cmake}" \
+    ${sh_exe_cmake:+-DCMAKE_SH="${sh_exe_cmake}"} \
     ${exe_linker_flags:+-DCMAKE_EXE_LINKER_FLAGS="${exe_linker_flags}"}
   cmake --build build --config "${build_type}" --parallel
 
