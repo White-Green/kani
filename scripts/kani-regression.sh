@@ -84,6 +84,7 @@ TESTS=(
 
 WINDOWS_SKIPPED_SUITES=(
   "expected"
+  "std-checks"
   "ui"
   "firecracker"
   "prusti"
