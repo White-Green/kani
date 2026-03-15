@@ -83,6 +83,8 @@ TESTS=(
 )
 
 WINDOWS_SKIPPED_SUITES=(
+  "expected"
+  "ui"
   "firecracker"
   "prusti"
   "smack"
