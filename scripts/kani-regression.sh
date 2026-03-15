@@ -92,6 +92,7 @@ WINDOWS_SKIPPED_SUITES=(
   "script-based-pre"
   "coverage"
   "cargo-coverage"
+  "kani-fixme"
   "firecracker"
   "prusti"
   "smack"
