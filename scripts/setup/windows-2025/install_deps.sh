@@ -153,6 +153,12 @@ install_cbmc_from_source() {
   git clone --branch "cbmc-${CBMC_VERSION}" --depth 1 https://github.com/diffblue/cbmc "${work_dir}"
   pushd "${work_dir}"
   git submodule update --init
+  # On Windows + Visual Studio generators, ExternalProject commands run via cmd.
+  # CaDiCaL's upstream build recipe uses './configure', which fails under cmd.
+  # Rewrite to run via sh explicitly so source builds can enable cadical.
+  if [[ -n "${sh_exe_msys}" ]]; then
+    sed -i 's@COMMAND ./configure@COMMAND sh ./configure@g' src/solvers/CMakeLists.txt
+  fi
 
   # Keep frame pointers and debug symbols for actionable crash traces.
   CXXFLAGS="${CBMC_SOURCE_CXXFLAGS:--Zi /Oy-}" cmake -S . -B build \
