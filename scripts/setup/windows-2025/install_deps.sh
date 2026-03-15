@@ -35,7 +35,11 @@ choco_install_with_retry cmake || { echo "CMake installation failed"; exit 1; }
 echo "Installing winflexbison..."
 choco_install_with_retry winflexbison3 || { echo "winflexbison installation failed"; exit 1; }
 CHOCO_BIN_MSYS="/c/ProgramData/chocolatey/bin"
+Z3_REAL_BIN_MSYS="/c/ProgramData/chocolatey/lib/z3/tools/bin/bin"
 WINFLEX_TOOLS_MSYS="/c/ProgramData/chocolatey/lib/winflexbison3/tools"
+if [[ -d "${Z3_REAL_BIN_MSYS}" ]]; then
+  export PATH="${Z3_REAL_BIN_MSYS}:$PATH"
+fi
 if [[ -d "${CHOCO_BIN_MSYS}" ]]; then
   export PATH="${CHOCO_BIN_MSYS}:$PATH"
 fi
@@ -187,6 +191,9 @@ rm "cvc5-${ARCH}-static.zip"
 
 # Add paths to GITHUB_PATH if running in CI
 if [[ -n "${GITHUB_PATH:-}" ]]; then
+  if [[ -d "${Z3_REAL_BIN_MSYS}" ]]; then
+    echo "C:\\ProgramData\\chocolatey\\lib\\z3\\tools\\bin\\bin" >> "$GITHUB_PATH"
+  fi
   echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
   if [[ "${CBMC_BUILD_FROM_SOURCE:-0}" != "1" ]]; then
     echo "C:\\Program Files\\CBMC\\bin" >> "$GITHUB_PATH"
