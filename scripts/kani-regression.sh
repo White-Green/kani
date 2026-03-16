@@ -261,6 +261,9 @@ for testp in "${TESTS[@]}"; do
       # Temporary Windows workaround: auxiliary assertion reachability checks can
       # be misreported as failures in cargo-ui suite and mask functional results.
       WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-assertion-reach-checks)
+      # `kani-driver.exe kani` on Windows can otherwise miss CBMC JSON `result`
+      # extraction for cover checks and report status-10 failures.
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--output-format --kani-flag=regular)
     fi
     windows_start_regression_heartbeat "$suite" "$mode"
     set +e

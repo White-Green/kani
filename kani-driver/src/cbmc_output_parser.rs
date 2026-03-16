@@ -387,11 +387,12 @@ enum Action {
 /// (Would provide a streaming iterator over a json array.)
 struct Parser {
     pub input_so_far: String,
+    pub full_output: String,
 }
 
 impl Parser {
     fn new() -> Self {
-        Parser { input_so_far: String::new() }
+        Parser { input_so_far: String::new(), full_output: String::new() }
     }
 
     /// Triggers an action based on the input:
@@ -408,7 +409,12 @@ impl Parser {
         if trimmed == "[" || trimmed == "]" {
             return Some(Action::ClearInput);
         }
-        if input.starts_with("  }") {
+        // Top-level array items are closed with exactly two-space indentation:
+        //   "  }," or "  }"
+        // Nested objects in CBMC payloads are indented deeper (e.g., four spaces),
+        // so using `starts_with("  }")` can split items prematurely.
+        let line = input.trim_end_matches(['\r', '\n']);
+        if line == "  }," || line == "  }" {
             return Some(Action::ProcessItem);
         }
         None
@@ -475,7 +481,9 @@ impl Parser {
         // shouldn't be hard to debug with that information. The same strategy
         // can be used for other `ParserItem` variants, but they're normally
         // easier to debug.
-        if string_without_delimiter.starts_with(RESULT_ITEM_PREFIX) {
+        if string_without_delimiter.starts_with(RESULT_ITEM_PREFIX)
+            || string_without_delimiter.contains("\"result\":")
+        {
             let result_item: Result<ResultStruct, _> =
                 serde_json::from_str(string_without_delimiter);
             if let Err(err) = result_item {
@@ -505,6 +513,7 @@ impl Parser {
     /// Processes a line to determine if an action must be triggered.
     /// The action may result in a `ParserItem`, which is then returned.
     fn process_line(&mut self, input: String) -> Option<ParserItem> {
+        self.full_output.push_str(&input);
         self.add_to_input(input.clone());
         let action_required = self.triggers_action(input);
         if let Some(action) = action_required {
@@ -571,6 +580,13 @@ pub async fn process_cbmc_output(
             processed_items.push(item);
         }
     }
+    if !processed_items.iter().any(|item| matches!(item, ParserItem::Result { .. })) {
+        if let Some(result_item) = extract_result_from_full_json(&parser.full_output) {
+            if let Some(item) = eager_filter(result_item) {
+                processed_items.push(item);
+            }
+        }
+    }
 
     // This will get us the process's exit code
     let status = process.wait().await?;
@@ -592,6 +608,22 @@ pub async fn process_cbmc_output(
     let process_status = status.code().expect("Process exited without a status code");
 
     Ok(VerificationOutput { process_status, processed_items })
+}
+
+fn extract_result_from_full_json(full_output: &str) -> Option<ParserItem> {
+    let parsed: serde_json::Value = serde_json::from_str(full_output).ok()?;
+    let array = parsed.as_array()?;
+    for entry in array {
+        if !entry.get("result").is_some() {
+            continue;
+        }
+        if let Ok(item) = serde_json::from_value::<ParserItem>(entry.clone()) {
+            if matches!(item, ParserItem::Result { .. }) {
+                return Some(item);
+            }
+        }
+    }
+    None
 }
 
 /// Takes (by ownership) a vector of messages, and returns that vector with the `Result`
@@ -790,6 +822,7 @@ mod tests {
     fn parser_handles_crlf_items_with_trailing_comma() {
         let parser = Parser {
             input_so_far: "  {\r\n    \"program\": \"CBMC 6.8.0\"\r\n  },\r\n".to_string(),
+            full_output: String::new(),
         };
         match parser.parse_item() {
             ParserItem::Program { program } => assert_eq!(program, "CBMC 6.8.0"),
@@ -799,8 +832,44 @@ mod tests {
 
     #[test]
     fn parser_ignores_standalone_closing_brace_item() {
-        let mut parser = Parser { input_so_far: "  },\r\n".to_string() };
+        let mut parser =
+            Parser { input_so_far: "  },\r\n".to_string(), full_output: String::new() };
         assert!(parser.do_action(Action::ProcessItem).is_none());
+    }
+
+    #[test]
+    fn parser_processes_basic_json_items_line_by_line() {
+        let input = [
+            "[\r\n",
+            "  {\r\n",
+            "    \"program\": \"CBMC 6.8.0\"\r\n",
+            "  },\r\n",
+            "  {\r\n",
+            "    \"messageText\": \"CBMC version 6.8.0\",\r\n",
+            "    \"messageType\": \"STATUS-MESSAGE\"\r\n",
+            "  },\r\n",
+            "]\r\n",
+        ];
+        let mut parser = Parser::new();
+        let mut items = Vec::new();
+        for line in input {
+            if let Some(item) = parser.process_line(line.to_string()) {
+                items.push(item);
+            }
+        }
+
+        assert_eq!(items.len(), 2);
+        match &items[0] {
+            ParserItem::Program { program } => assert_eq!(program, "CBMC 6.8.0"),
+            other => panic!("unexpected first item: {other:?}"),
+        }
+        match &items[1] {
+            ParserItem::Message { message_text, message_type } => {
+                assert_eq!(message_text, "CBMC version 6.8.0");
+                assert_eq!(message_type, "STATUS-MESSAGE");
+            }
+            other => panic!("unexpected second item: {other:?}"),
+        }
     }
 
     /// Checks that a valid CBMC "result" item can be deserialized into a
