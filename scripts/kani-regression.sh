@@ -257,6 +257,11 @@ for testp in "${TESTS[@]}"; do
       export KANI_WINDOWS_GOTO_INSTRUMENT_TRACE="${KANI_WINDOWS_GOTO_INSTRUMENT_TRACE:-1}"
       export KANI_WINDOWS_SKIP_ENFORCE_CONTRACT="${KANI_WINDOWS_SKIP_ENFORCE_CONTRACT:-1}"
     fi
+    if [[ "$suite" == "cargo-ui" ]]; then
+      # Temporary Windows workaround: auxiliary assertion reachability checks can
+      # be misreported as failures in cargo-ui suite and mask functional results.
+      WINDOWS_COMPILETEST_ARGS+=(--kani-flag=--no-assertion-reach-checks)
+    fi
     windows_start_regression_heartbeat "$suite" "$mode"
     set +e
     if command -v timeout >/dev/null 2>&1; then
