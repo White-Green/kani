@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 // Check that `fsub_fast` overflow checks pass with suitable assumptions
 
 #![feature(core_intrinsics)]

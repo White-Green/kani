@@ -21,8 +21,8 @@ jobs:
     env:
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "5400"
       KANI_REGRESSION_SOLVER: "z3"
-      # TEMPORARY: narrow Windows regression for rapid cargo-ui debugging loops.
-      KANI_WINDOWS_SUITE_FILTER: "cargo-ui"
+      # TEMPORARY: narrow Windows regression while gradually re-enabling suites.
+      KANI_WINDOWS_SUITE_FILTER: "kani,cargo-ui"
     strategy:
       fail-fast: false
       matrix:
