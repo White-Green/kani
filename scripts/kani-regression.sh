@@ -87,7 +87,7 @@ WINDOWS_SKIPPED_SUITES=(
   "ui"
   "expected"
   "cargo-kani"
-  "cargo-ui"
+  "kani-docs"
   "script-based-pre"
   "coverage"
   "cargo-coverage"
