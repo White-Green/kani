@@ -6,6 +6,8 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+#[cfg(windows)]
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::session::KaniSession;
 
@@ -98,9 +100,11 @@ impl KaniSession {
     ) -> Result<()> {
         #[cfg(windows)]
         if input == output {
+            static SPECIALIZE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
             // goto-cc on Windows rejects in-place rewrites where input and output are the same file.
-            let temp_output =
-                output.with_file_name(format!("kani-specialize-{}.out", std::process::id()));
+            let unique = SPECIALIZE_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+            let temp_output = output
+                .with_file_name(format!("kani-specialize-{}-{}.out", std::process::id(), unique));
             let mut cmd = Command::new("goto-cc");
             cmd.arg(Self::normalize_tool_path(input))
                 .args(["--function", function, "-o"])
