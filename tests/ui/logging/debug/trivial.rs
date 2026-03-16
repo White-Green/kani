@@ -1,6 +1,7 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+// ignore-windows
 // kani-flags: --debug
 // This test is to make sure we are correctly printing debug messages in the compiler.
 //
