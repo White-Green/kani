@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
-// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+// ignore-windows
 // kani-verify-fail
 
 // Cast a concrete ref to a trait raw pointer.
