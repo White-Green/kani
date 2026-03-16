@@ -96,6 +96,33 @@ impl KaniSession {
         output: &Path,
         function: &str,
     ) -> Result<()> {
+        #[cfg(windows)]
+        if input == output {
+            // goto-cc on Windows rejects in-place rewrites where input and output are the same file.
+            let temp_output =
+                output.with_file_name(format!("kani-specialize-{}.out", std::process::id()));
+            let mut cmd = Command::new("goto-cc");
+            cmd.arg(Self::normalize_tool_path(input))
+                .args(["--function", function, "-o"])
+                .arg(Self::normalize_tool_path(&temp_output));
+
+            let result = self.run_suppress(cmd);
+            if result.is_err() {
+                let _ = fs::remove_file(&temp_output);
+                return result;
+            }
+
+            let _ = fs::remove_file(output);
+            fs::rename(&temp_output, output).with_context(|| {
+                format!(
+                    "Failed to move temporary specialized goto {} to {}",
+                    temp_output.display(),
+                    output.display()
+                )
+            })?;
+            return Ok(());
+        }
+
         let mut cmd = Command::new("goto-cc");
         cmd.arg(Self::normalize_tool_path(input))
             .args(["--function", function, "-o"])
