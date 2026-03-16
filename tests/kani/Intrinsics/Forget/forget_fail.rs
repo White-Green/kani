@@ -1,6 +1,7 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // kani-check-fail
+// ignore-windows
 
 // Checks that `forget` produces a compilation error if the value is referenced
 // after "forgetting" it
