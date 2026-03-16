@@ -34,9 +34,19 @@ impl KaniSession {
     pub fn link_goto_binary(&self, inputs: &[PathBuf], output: &Path) -> Result<()> {
         #[cfg(windows)]
         if inputs.len() == 1 {
+            static LINK_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+            let unique = LINK_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
             // Work around goto-cc crashes on Windows with long mangled artifact names.
-            let short_input = output.with_file_name("kani-link-input.symtab.out");
-            let short_output = output.with_file_name("kani-link-output.out");
+            let short_input = output.with_file_name(format!(
+                "kani-link-input-{}-{}.symtab.out",
+                std::process::id(),
+                unique
+            ));
+            let short_output = output.with_file_name(format!(
+                "kani-link-output-{}-{}.out",
+                std::process::id(),
+                unique
+            ));
 
             fs::copy(&inputs[0], &short_input).with_context(|| {
                 format!(
