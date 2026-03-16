@@ -83,7 +83,7 @@ TESTS=(
 )
 
 WINDOWS_SKIPPED_SUITES=(
-  "std-checks"
+  "expected"
   "ui"
   "cargo-kani"
   "cargo-ui"
