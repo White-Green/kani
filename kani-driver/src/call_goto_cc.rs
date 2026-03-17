@@ -63,6 +63,11 @@ impl KaniSession {
                 std::process::id(),
                 unique
             ));
+            let deallocated_stub = output.with_file_name(format!(
+                "kani-cprover-deallocated-{}-{}.c",
+                std::process::id(),
+                unique
+            ));
 
             fs::copy(&inputs[0], &short_input).with_context(|| {
                 format!(
@@ -71,9 +76,16 @@ impl KaniSession {
                     inputs[0].display()
                 )
             })?;
+            fs::write(&deallocated_stub, "void *__CPROVER_deallocated;\n").with_context(|| {
+                format!(
+                    "Failed to create temporary CPROVER deallocated stub {}",
+                    deallocated_stub.display()
+                )
+            })?;
 
             let mut args: Vec<OsString> = Vec::new();
             args.push(Self::normalize_tool_path(&short_input));
+            args.push(Self::normalize_tool_path(&deallocated_stub));
             // On Windows, avoid passing C library sources to goto-cc in this link step.
             // These sources are not required for std-checks and have caused frequent crashes.
             args.push("-o".into());
@@ -84,6 +96,7 @@ impl KaniSession {
             let link_result = self.run_suppress(cmd);
 
             let _ = fs::remove_file(&short_input);
+            let _ = fs::remove_file(&deallocated_stub);
             link_result?;
 
             fs::rename(&short_output, output).with_context(|| {
