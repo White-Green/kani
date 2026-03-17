@@ -54,6 +54,13 @@ impl KaniSession {
         } else {
             self.just_drop_unused_functions(output)?;
         }
+        #[cfg(windows)]
+        {
+            // `--drop-unused-functions` can remove allocator bookkeeping symbols that CBMC
+            // still expects during memory-check setup (e.g. `__CPROVER_deallocated`).
+            // Re-adding the library here keeps those symbols available for verification.
+            self.add_library(output)?;
+        }
 
         self.rewrite_back_edges(output)?;
 
