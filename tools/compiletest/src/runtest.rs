@@ -370,12 +370,6 @@ impl TestCx<'_> {
             // invariant violation for missing `__CPROVER_deallocated`.
             cargo.arg("--no-memory-safety-checks");
         }
-        if cfg!(windows) && function_name == "expected" && rel_dir.ends_with("issue-3817") {
-            // On Windows this test can spend most of its time in memory-safety
-            // checks before reaching the expected unsupported-foreign-function
-            // failure mode.
-            cargo.arg("--no-memory-safety-checks");
-        }
         cargo.args(&self.config.extra_args);
 
         let proc_res = self.compose_and_run(cargo);

@@ -4,14 +4,18 @@
 //! fail if a missing symbol is reachable.
 
 use bzip2::Compression;
-use bzip2::read::BzEncoder;
+use bzip2_sys::{BZ2_bzCompressInit, bz_stream};
 
 #[kani::proof]
 fn check_missing_extern_fn() {
-    // Call bzip compressor
-    let data: [u8; 10] = kani::any();
-    let compressor = BzEncoder::new(&data[..], Compression::best());
-    assert_eq!(compressor.total_in(), data.len().try_into().unwrap());
+    // Keep using the safe crate so we still depend on bzip2 in this test.
+    let _ = Compression::best();
+    // Trigger the missing foreign call without heap allocations that are slow on Windows.
+    let mut stream: bz_stream = unsafe { std::mem::zeroed() };
+    let block_size = kani::any_where(|v: &i32| (1..=9).contains(v));
+    let verbosity = kani::any_where(|v: &i32| (0..=4).contains(v));
+    let work_factor = kani::any_where(|v: &i32| (0..=250).contains(v));
+    let _ = unsafe { BZ2_bzCompressInit(&mut stream, block_size, verbosity, work_factor) };
 }
 
 #[kani::proof]
