@@ -375,6 +375,7 @@ impl TestCx<'_> {
             // checks before reaching the expected unsupported-foreign-function
             // failure mode.
             cargo.arg("--no-memory-safety-checks");
+            cargo.arg("--no-undefined-function-checks");
         }
         cargo.args(&self.config.extra_args);
 
