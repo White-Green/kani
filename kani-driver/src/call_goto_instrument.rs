@@ -54,15 +54,13 @@ impl KaniSession {
         } else {
             self.just_drop_unused_functions(output)?;
         }
+        self.rewrite_back_edges(output)?;
         #[cfg(windows)]
         {
-            // `--drop-unused-functions` can remove allocator bookkeeping symbols that CBMC
-            // still expects during memory-check setup (e.g. `__CPROVER_deallocated`).
-            // Re-adding the library here keeps those symbols available for verification.
+            // Keep allocator bookkeeping symbols available in the final model consumed by CBMC.
+            // Some Windows transformations can drop these symbols before verification.
             self.add_library(output)?;
         }
-
-        self.rewrite_back_edges(output)?;
 
         if self.args.gen_c {
             let c_outfile = alter_extension(output, "c");
