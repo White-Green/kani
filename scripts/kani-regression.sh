@@ -20,6 +20,14 @@ export KANI_FAIL_ON_UNEXPECTED_DESCRIPTION="true"
 
 # Gather dependencies version from top `kani-dependencies` file.
 source "${KANI_DIR}/kani-dependencies"
+# Allow Windows CI to pin a specific CBMC version while we debug regressions.
+if [[ -n "${KANI_WINDOWS_CBMC_VERSION:-}" ]]; then
+  CBMC_VERSION="${KANI_WINDOWS_CBMC_VERSION}"
+  CBMC_MAJOR="${CBMC_VERSION%%.*}"
+  cbmc_rest="${CBMC_VERSION#*.}"
+  CBMC_MINOR="${cbmc_rest%%.*}"
+  echo "Overriding CBMC version for Windows regression: ${CBMC_VERSION}"
+fi
 # Sanity check dependencies values.
 [[ "${CBMC_MAJOR}.${CBMC_MINOR}" == "${CBMC_VERSION%.*}" ]] || \
     (echo "Conflicting CBMC versions"; exit 1)

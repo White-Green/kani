@@ -9,6 +9,13 @@ echo "Setting up Windows CI environment..."
 
 # Source kani-dependencies to get versions
 source kani-dependencies
+if [[ -n "${KANI_WINDOWS_CBMC_VERSION:-}" ]]; then
+  CBMC_VERSION="${KANI_WINDOWS_CBMC_VERSION}"
+  CBMC_MAJOR="${CBMC_VERSION%%.*}"
+  cbmc_rest="${CBMC_VERSION#*.}"
+  CBMC_MINOR="${cbmc_rest%%.*}"
+  echo "Overriding CBMC version for Windows CI: ${CBMC_VERSION}"
+fi
 
 choco_install_with_retry() {
   local package_name="$1"
