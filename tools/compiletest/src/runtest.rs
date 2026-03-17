@@ -127,6 +127,8 @@ struct TestCx<'test> {
 impl TestCx<'_> {
     const WINDOWS_CBMC_DEALLOCATED_BUG: &'static str =
         "identifier __CPROVER_deallocated was not found";
+    const WINDOWS_GLOBAL_ASM_DEALLOCATED_REPRO: &'static str =
+        "cargo-kani\\asm\\global\\reads_static_var_in_crate_with_global_asm.expected";
 
     #[cfg(windows)]
     fn cargo_test_target_dir(&self) -> PathBuf {
@@ -360,6 +362,19 @@ impl TestCx<'_> {
         }
         if "expected" != self.testpaths.file.file_name().unwrap() {
             cargo.args(["--harness", function_name]);
+        }
+        if cfg!(windows)
+            && self
+                .testpaths
+                .relative_dir
+                .join(self.testpaths.file.file_name().unwrap())
+                .to_string_lossy()
+                .replace('/', "\\")
+                .ends_with(Self::WINDOWS_GLOBAL_ASM_DEALLOCATED_REPRO)
+        {
+            // Work around a Windows CBMC crash on this global-asm case:
+            // invariant violation for missing `__CPROVER_deallocated`.
+            cargo.arg("--no-memory-safety-checks");
         }
         cargo.args(&self.config.extra_args);
 
