@@ -13,6 +13,16 @@ use crate::session::KaniSession;
 
 impl KaniSession {
     #[cfg(windows)]
+    fn goto_cc_frontend() -> &'static str {
+        if which::which("goto-cl").is_ok() { "goto-cl" } else { "goto-cc" }
+    }
+
+    #[cfg(not(windows))]
+    fn goto_cc_frontend() -> &'static str {
+        "goto-cc"
+    }
+
+    #[cfg(windows)]
     pub(crate) fn normalize_tool_path(path: &Path) -> OsString {
         let path_str = path.as_os_str().to_string_lossy();
         if let Some(stripped) = path_str.strip_prefix(r"\\?\UNC\") {
@@ -63,7 +73,7 @@ impl KaniSession {
             args.push("-o".into());
             args.push(Self::normalize_tool_path(&short_output));
 
-            let mut cmd = Command::new("goto-cc");
+            let mut cmd = Command::new(Self::goto_cc_frontend());
             cmd.args(args);
             let link_result = self.run_suppress(cmd);
 
@@ -93,7 +103,7 @@ impl KaniSession {
         args.push("-o".into());
         args.push(Self::normalize_tool_path(output));
 
-        let mut cmd = Command::new("goto-cc");
+        let mut cmd = Command::new(Self::goto_cc_frontend());
         cmd.args(args);
 
         self.run_suppress(cmd)?;
@@ -118,7 +128,7 @@ impl KaniSession {
                 std::process::id(),
                 unique
             ));
-            let mut cmd = Command::new("goto-cc");
+            let mut cmd = Command::new(Self::goto_cc_frontend());
             cmd.arg(Self::normalize_tool_path(input))
                 .args(["--function", function, "-o"])
                 .arg(Self::normalize_tool_path(&temp_output));
@@ -140,7 +150,7 @@ impl KaniSession {
             return Ok(());
         }
 
-        let mut cmd = Command::new("goto-cc");
+        let mut cmd = Command::new(Self::goto_cc_frontend());
         cmd.arg(Self::normalize_tool_path(input))
             .args(["--function", function, "-o"])
             .arg(Self::normalize_tool_path(output));
