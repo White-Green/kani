@@ -14,7 +14,13 @@ use crate::session::KaniSession;
 impl KaniSession {
     #[cfg(windows)]
     fn goto_cc_frontend() -> &'static str {
-        if which::which("goto-cl").is_ok() { "goto-cl" } else { "goto-cc" }
+        if which::which("goto-cc").is_ok() {
+            "goto-cc"
+        } else if which::which("goto-cl").is_ok() {
+            "goto-cl"
+        } else {
+            "goto-cc"
+        }
     }
 
     #[cfg(not(windows))]
