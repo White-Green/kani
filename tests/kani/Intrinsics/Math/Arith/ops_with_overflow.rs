@@ -1,5 +1,6 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+// ignore-windows
 //
 // Checks that `<op>_with_overflow` returns the expected result in all cases.
 #![feature(core_intrinsics)]
