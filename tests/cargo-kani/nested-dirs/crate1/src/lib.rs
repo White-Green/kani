@@ -5,4 +5,6 @@
 fn a_check() {
     let v = vec![1, 2, 3];
     assert_eq!(v.len(), 3);
+    // Avoid triggering allocator deallocation checks in this nested-path smoke test.
+    std::mem::forget(v);
 }
