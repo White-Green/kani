@@ -6,8 +6,10 @@ use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+#[cfg(windows)]
+use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(windows)]
 use std::time::{Duration, Instant};
 
@@ -352,10 +354,32 @@ impl KaniSession {
         &self,
         args: impl IntoIterator<Item = S>,
     ) -> Result<()> {
+        let args: Vec<OsString> = args.into_iter().map(|arg| arg.as_ref().to_owned()).collect();
+        #[cfg(windows)]
+        if let Some((short_args, short_file, original_file)) =
+            prepare_windows_short_inplace_args(&args)
+        {
+            let mut cmd = Command::new("goto-instrument");
+            cmd.args(&short_args);
+            let result = self.run_suppress(cmd);
+            if result.is_err() {
+                let _ = fs::remove_file(&short_file);
+                return result;
+            }
+            fs::copy(&short_file, &original_file).with_context(|| {
+                format!(
+                    "Failed to copy temporary goto-instrument output {} to {}",
+                    short_file.display(),
+                    original_file.display()
+                )
+            })?;
+            let _ = fs::remove_file(&short_file);
+            return Ok(());
+        }
+
         // TODO get goto-instrument path from self
         let mut cmd = Command::new("goto-instrument");
-        cmd.args(args);
-
+        cmd.args(&args);
         self.run_suppress(cmd)
     }
 
@@ -477,11 +501,23 @@ impl KaniSession {
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
 
+        let (effective_args, short_file, original_file) =
+            if let Some((short_args, short_file, original_file)) =
+                prepare_windows_short_inplace_args(args)
+            {
+                (short_args, Some(short_file), Some(original_file))
+            } else {
+                (args.to_vec(), None, None)
+            };
+
         let mut cmd = Command::new("goto-instrument");
-        cmd.args(args);
+        cmd.args(&effective_args);
         if trace_timeout {
-            let rendered_args =
-                args.iter().map(|arg| arg.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            let rendered_args = effective_args
+                .iter()
+                .map(|arg| arg.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" ");
             eprintln!(
                 "[kani/windows-timeout] starting phase={phase} timeout_secs={timeout_secs} args={rendered_args}"
             );
@@ -499,7 +535,20 @@ impl KaniSession {
         loop {
             if let Some(status) = child.try_wait()? {
                 if !status.success() {
+                    if let Some(short_file) = &short_file {
+                        let _ = fs::remove_file(short_file);
+                    }
                     anyhow::bail!("goto-instrument exited with status {}", status);
+                }
+                if let (Some(short_file), Some(original_file)) = (&short_file, &original_file) {
+                    fs::copy(short_file, original_file).with_context(|| {
+                        format!(
+                            "Failed to copy temporary goto-instrument output {} to {}",
+                            short_file.display(),
+                            original_file.display()
+                        )
+                    })?;
+                    let _ = fs::remove_file(short_file);
                 }
                 return Ok(());
             }
@@ -513,6 +562,9 @@ impl KaniSession {
                 }
                 let _ = child.kill();
                 let _ = child.wait();
+                if let Some(short_file) = &short_file {
+                    let _ = fs::remove_file(short_file);
+                }
                 anyhow::bail!("goto-instrument ({phase}) timed out after {} seconds", timeout_secs);
             }
 
@@ -575,6 +627,42 @@ impl KaniSession {
         candidates.dedup();
         Ok(candidates)
     }
+}
+
+#[cfg(windows)]
+fn prepare_windows_short_inplace_args(
+    args: &[OsString],
+) -> Option<(Vec<OsString>, PathBuf, PathBuf)> {
+    if args.len() < 2 {
+        return None;
+    }
+
+    let input_idx = args.len() - 2;
+    let output_idx = args.len() - 1;
+    if args[input_idx] != args[output_idx] {
+        return None;
+    }
+
+    let original_file = PathBuf::from(&args[input_idx]);
+    if !original_file.exists() {
+        return None;
+    }
+
+    static GOTO_INSTRUMENT_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+    let unique = GOTO_INSTRUMENT_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let short_file = original_file.with_file_name(format!(
+        "kani-goto-instrument-{}-{}.out",
+        std::process::id(),
+        unique
+    ));
+    if fs::copy(&original_file, &short_file).is_err() {
+        return None;
+    }
+
+    let mut short_args = args.to_vec();
+    short_args[input_idx] = KaniSession::normalize_tool_path(&short_file);
+    short_args[output_idx] = KaniSession::normalize_tool_path(&short_file);
+    Some((short_args, short_file, original_file))
 }
 
 fn goto_instrument_phase(args: &[OsString]) -> &str {
