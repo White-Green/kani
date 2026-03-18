@@ -118,44 +118,67 @@ impl KaniSession {
     }
 
     /// Produce a goto binary with its entry point set to a particular proof harness.
+    #[cfg(windows)]
     pub fn specialize_to_proof_harness(
         &self,
         input: &Path,
         output: &Path,
         function: &str,
     ) -> Result<()> {
-        #[cfg(windows)]
-        if input == output {
-            static SPECIALIZE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
-            // goto-cc on Windows rejects in-place rewrites where input and output are the same file.
-            let unique = SPECIALIZE_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
-            let temp_output = output.with_file_name(format!(
-                "kani-specialize-{}-{}.out",
-                std::process::id(),
-                unique
-            ));
-            let mut cmd = Command::new(Self::goto_cc_frontend());
-            cmd.arg(Self::normalize_tool_path(input))
-                .args(["--function", function, "-o"])
-                .arg(Self::normalize_tool_path(&temp_output));
+        static SPECIALIZE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+        // Use short temporary paths to avoid Windows path-length and in-place rewrite issues.
+        let unique = SPECIALIZE_TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let temp_input = output.with_file_name(format!(
+            "kani-specialize-input-{}-{}.out",
+            std::process::id(),
+            unique
+        ));
+        let temp_output = output.with_file_name(format!(
+            "kani-specialize-{}-{}.out",
+            std::process::id(),
+            unique
+        ));
+        fs::copy(input, &temp_input).with_context(|| {
+            format!(
+                "Failed to create temporary goto input {} from {}",
+                temp_input.display(),
+                input.display()
+            )
+        })?;
 
-            let result = self.run_suppress(cmd);
-            if result.is_err() {
-                let _ = fs::remove_file(&temp_output);
-                return result;
-            }
+        let mut cmd = Command::new(Self::goto_cc_frontend());
+        cmd.arg(Self::normalize_tool_path(&temp_input))
+            .args(["--function", function, "-o"])
+            .arg(Self::normalize_tool_path(&temp_output));
 
-            let _ = fs::remove_file(output);
-            fs::rename(&temp_output, output).with_context(|| {
-                format!(
-                    "Failed to move temporary specialized goto {} to {}",
-                    temp_output.display(),
-                    output.display()
-                )
-            })?;
-            return Ok(());
+        let result = self.run_suppress(cmd);
+        let _ = fs::remove_file(&temp_input);
+        if result.is_err() {
+            let _ = fs::remove_file(&temp_output);
+            return result;
         }
 
+        if input == output {
+            let _ = fs::remove_file(output);
+        }
+        fs::rename(&temp_output, output).with_context(|| {
+            format!(
+                "Failed to move temporary specialized goto {} to {}",
+                temp_output.display(),
+                output.display()
+            )
+        })?;
+        Ok(())
+    }
+
+    /// Produce a goto binary with its entry point set to a particular proof harness.
+    #[cfg(not(windows))]
+    pub fn specialize_to_proof_harness(
+        &self,
+        input: &Path,
+        output: &Path,
+        function: &str,
+    ) -> Result<()> {
         let mut cmd = Command::new(Self::goto_cc_frontend());
         cmd.arg(Self::normalize_tool_path(input))
             .args(["--function", function, "-o"])
