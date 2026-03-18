@@ -1,7 +1,5 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// ignore-windows
-
 // Check that we get the expected results for the `raw_eq` intrinsic
 #![feature(core_intrinsics)]
 use std::intrinsics::raw_eq;
