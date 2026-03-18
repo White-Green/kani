@@ -24,7 +24,6 @@ jobs:
       KANI_WINDOWS_CBMC_VERSION: "6.7.1"
       # TEMPORARY: focus Windows debugging on cargo-kani while bringing up Windows.
       KANI_WINDOWS_SUITE_FILTER: "cargo-kani"
-      KANI_WINDOWS_COMPILETEST_FILTER: 'cargo-kani\issue-3817\expected'
     strategy:
       fail-fast: false
       matrix:
