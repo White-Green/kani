@@ -133,11 +133,8 @@ impl KaniSession {
             std::process::id(),
             unique
         ));
-        let temp_output = output.with_file_name(format!(
-            "kani-specialize-{}-{}.out",
-            std::process::id(),
-            unique
-        ));
+        let temp_output =
+            output.with_file_name(format!("kani-specialize-{}-{}.out", std::process::id(), unique));
         fs::copy(input, &temp_input).with_context(|| {
             format!(
                 "Failed to create temporary goto input {} from {}",
