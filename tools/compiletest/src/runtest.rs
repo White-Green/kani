@@ -60,8 +60,8 @@ fn cargo_kani_command() -> Command {
 
     if bundle_kani_driver.exists() {
         let mut cmd = Command::new(bundle_kani_driver);
-        // Enter CargoKani mode directly.
-        cmd.arg("cargo-kani");
+        // Emulate `cargo kani ...` so kani-driver enters CargoKani mode.
+        cmd.arg("kani");
         cmd
     } else {
         let mut cmd = Command::new("cargo");
