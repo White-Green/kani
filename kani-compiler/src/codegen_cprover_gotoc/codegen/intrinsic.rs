@@ -1071,9 +1071,8 @@ impl GotocCtx<'_, '_> {
     // `raw_eq` determines whether the raw bytes of two values are equal.
     // https://doc.rust-lang.org/core/intrinsics/fn.raw_eq.html
     //
-    // The implementation below calls `memcmp` and returns equal if the result is zero, and
-    // immediately returns zero when ZSTs are compared to mimic what compare_bytes and our memcmp
-    // hook do.
+    // The implementation below compares fixed-size byte arrays directly.
+    // This avoids depending on a platform C library `memcmp` definition.
     //
     // TODO: It's UB to call `raw_eq` if any of the bytes in the first or second
     // arguments are uninitialized. At present, we cannot detect if there is
@@ -1095,12 +1094,10 @@ impl GotocCtx<'_, '_> {
         if layout.size.bytes() == 0 {
             self.codegen_expr_to_place_stable(p, Expr::int_constant(1, Type::c_bool()), loc)
         } else {
-            let sz = Expr::int_constant(layout.size.bytes(), Type::size_t())
-                .with_size_of_annotation(self.codegen_ty_stable(ty));
-            let e = BuiltinFn::Memcmp
-                .call(vec![dst, val, sz], loc)
-                .eq(Type::c_int().zero())
-                .cast_to(Type::c_bool());
+            let byte_array = Type::unsigned_int(8).array_of(layout.size.bytes());
+            let lhs_bytes = dst.cast_to(byte_array.clone().to_pointer()).dereference();
+            let rhs_bytes = val.cast_to(byte_array.to_pointer()).dereference();
+            let e = lhs_bytes.eq(rhs_bytes).cast_to(Type::c_bool());
             self.codegen_expr_to_place_stable(p, e, loc)
         }
     }
