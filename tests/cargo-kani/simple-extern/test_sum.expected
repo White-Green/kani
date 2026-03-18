@@ -1,2 +1,2 @@
 SUCCESS\
-assertion external_c_assertion(a) == a + 1
+assertion failed: external_c_assertion(a) == a + 1
