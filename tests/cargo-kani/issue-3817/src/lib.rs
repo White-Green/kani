@@ -4,14 +4,26 @@
 //! fail if a missing symbol is reachable.
 
 use bzip2::Compression;
-use bzip2::read::BzEncoder;
+use std::ffi::c_void;
+
+unsafe extern "C" {
+    fn BZ2_bzCompressInit(
+        stream: *mut c_void,
+        block_size_100k: i32,
+        verbosity: i32,
+        work_factor: i32,
+    ) -> i32;
+}
 
 #[kani::proof]
 fn check_missing_extern_fn() {
-    // Call bzip compressor
-    let data: [u8; 10] = kani::any();
-    let compressor = BzEncoder::new(&data[..], Compression::best());
-    assert_eq!(compressor.total_in(), data.len().try_into().unwrap());
+    // Keep using bzip2 in this crate while invoking the foreign function directly.
+    let _ = Compression::best();
+    let stream: *mut c_void = std::ptr::null_mut();
+    let block_size_100k = kani::any_where(|v: &i32| (1..=9).contains(v));
+    let verbosity = kani::any_where(|v: &i32| (0..=4).contains(v));
+    let work_factor = kani::any_where(|v: &i32| (0..=250).contains(v));
+    let _ = unsafe { BZ2_bzCompressInit(stream, block_size_100k, verbosity, work_factor) };
 }
 
 #[kani::proof]
