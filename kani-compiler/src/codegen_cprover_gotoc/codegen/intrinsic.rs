@@ -1071,7 +1071,7 @@ impl GotocCtx<'_, '_> {
     // `raw_eq` determines whether the raw bytes of two values are equal.
     // https://doc.rust-lang.org/core/intrinsics/fn.raw_eq.html
     //
-    // The implementation below compares fixed-size byte arrays directly.
+    // The implementation below compares fixed-size bitvectors directly.
     // This avoids depending on a platform C library `memcmp` definition.
     //
     // TODO: It's UB to call `raw_eq` if any of the bytes in the first or second
@@ -1094,10 +1094,10 @@ impl GotocCtx<'_, '_> {
         if layout.size.bytes() == 0 {
             self.codegen_expr_to_place_stable(p, Expr::int_constant(1, Type::c_bool()), loc)
         } else {
-            let byte_array = Type::unsigned_int(8).array_of(layout.size.bytes());
-            let lhs_bytes = dst.cast_to(byte_array.clone().to_pointer()).dereference();
-            let rhs_bytes = val.cast_to(byte_array.to_pointer()).dereference();
-            let e = lhs_bytes.eq(rhs_bytes).cast_to(Type::c_bool());
+            let bv_type = Type::unsigned_int(layout.size.bits());
+            let lhs_bits = dst.cast_to(bv_type.clone().to_pointer()).dereference();
+            let rhs_bits = val.cast_to(bv_type.to_pointer()).dereference();
+            let e = lhs_bits.eq(rhs_bits).cast_to(Type::c_bool());
             self.codegen_expr_to_place_stable(p, e, loc)
         }
     }
