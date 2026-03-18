@@ -17,6 +17,13 @@ use libc;
 
 #[kani::proof]
 pub fn check_create() {
-    let mut key = 0;
-    let _res = unsafe { libc::pthread_key_create(&mut key, None) };
+    #[cfg(unix)]
+    {
+        let mut key = 0;
+        let _res = unsafe { libc::pthread_key_create(&mut key, None) };
+    }
+    #[cfg(windows)]
+    {
+        let _res = unsafe { libc::puts(b"kani\0".as_ptr().cast()) };
+    }
 }
