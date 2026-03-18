@@ -74,8 +74,9 @@ impl KaniSession {
 
             let mut args: Vec<OsString> = Vec::new();
             args.push(Self::normalize_tool_path(&short_input));
-            // On Windows, avoid passing C library sources to goto-cc in this link step.
-            // These sources are not required for std-checks and have caused frequent crashes.
+            // Keep C library sources in the link step when explicitly requested.
+            // Some cargo-kani tests rely on symbols defined in --c-lib inputs.
+            args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
             args.push("-o".into());
             args.push(Self::normalize_tool_path(&short_output));
 
@@ -98,7 +99,6 @@ impl KaniSession {
 
         let mut args: Vec<OsString> = Vec::new();
         args.extend(inputs.iter().map(|x| Self::normalize_tool_path(x)));
-        #[cfg(not(windows))]
         args.extend(self.args.c_lib.iter().map(|x| Self::normalize_tool_path(x)));
 
         // TODO think about this: kani_lib_c is just an empty c file. Maybe we could just
