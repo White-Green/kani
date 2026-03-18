@@ -1,2 +1,2 @@
 SUCCESS\
-assertion rust_add1(x) == x + 1
+assertion external_c_assertion(a) == a + 1

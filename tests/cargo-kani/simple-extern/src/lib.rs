@@ -25,8 +25,7 @@ mod kani_tests {
 
         if a < 100 {
             unsafe {
-                external_c_assertion(a);
-                rust_add1(a);
+                assert!(external_c_assertion(a) == a + 1);
             }
         }
     }
