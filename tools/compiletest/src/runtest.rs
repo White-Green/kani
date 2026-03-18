@@ -55,11 +55,15 @@ fn cargo_kani_command() -> Command {
         .parent()
         .and_then(Path::parent)
         .expect("tools/compiletest is expected to be under repository root");
-    let bundle_cargo_kani =
-        repo_root.join("target").join("kani").join("bin").join("cargo-kani.exe");
+    let bundle_kani_driver =
+        repo_root.join("target").join("kani").join("bin").join("kani-driver.exe");
 
-    if bundle_cargo_kani.exists() {
-        Command::new(bundle_cargo_kani)
+    if bundle_kani_driver.exists() {
+        let mut cmd = Command::new(bundle_kani_driver);
+        // Match the mode used by `cargo kani ...` invocation.
+        cmd.arg("cargo-kani");
+        cmd.arg("kani");
+        cmd
     } else {
         let mut cmd = Command::new("cargo");
         cmd.arg("kani");
