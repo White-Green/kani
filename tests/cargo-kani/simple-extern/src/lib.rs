@@ -9,9 +9,7 @@ pub use externs::rust_add1;
 mod tests {
     #[test]
     fn it_works() {
-        unsafe {
-            external_c_assertion(12);
-        }
+        external_c_assertion(12);
     }
 }
 
@@ -24,9 +22,7 @@ mod kani_tests {
         let a: u32 = kani::any();
 
         if a < 100 {
-            unsafe {
-                assert!(external_c_assertion(a) == a + 1);
-            }
+            assert!(external_c_assertion(a) == a + 1);
         }
     }
 }
