@@ -1,7 +1,5 @@
 // Copyright Kani Contributors
 
-// ignore-windows
-
 // Checks that `offset` returns the expected addresses
 #![feature(core_intrinsics)]
 use std::intrinsics::offset;
