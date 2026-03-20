@@ -22,7 +22,6 @@ jobs:
       KANI_WINDOWS_COMPILETEST_WALLCLOCK_TIMEOUT: "18000"
       KANI_REGRESSION_SOLVER: "z3"
       KANI_WINDOWS_CBMC_VERSION: "6.7.1"
-      KANI_WINDOWS_COMPILETEST_FILTER: "ArithEqualOperators/main.rs"
     strategy:
       fail-fast: false
       matrix:
