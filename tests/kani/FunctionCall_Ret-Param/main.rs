@@ -1,7 +1,5 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// ignore-windows
-
 // kani-flags: --no-unwinding-checks
 
 // We use `--no-unwinding-checks` in this test to avoid getting
