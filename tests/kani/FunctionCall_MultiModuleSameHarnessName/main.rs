@@ -1,7 +1,5 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// ignore-windows
-
 //! This test checks if Kani can handle multiple harnesses in
 //! different directories (first, second, main) that share the same
 //! harness name (check). Previously, this caused Kani to crash. See
