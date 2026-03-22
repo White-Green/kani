@@ -56,7 +56,6 @@ mod verify {
         contracts::swap(&mut x, &mut y)
     }
 
-    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::swap)]
     pub fn check_swap_adt_no_drop() {
         let mut x: CannotDrop<u8> = kani::any();
