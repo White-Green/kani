@@ -256,6 +256,11 @@ impl KaniSession {
             for mut pass_args in passes {
                 pass_args.push(Self::normalize_tool_path(&short_file));
                 pass_args.push(Self::normalize_tool_path(&short_file));
+                maybe_preserve_windows_goto_model(
+                    &short_file,
+                    goto_instrument_phase(&pass_args),
+                    "input",
+                );
 
                 if is_enforce_contract_pass(&pass_args) {
                     let skip_enforce_contract = std::env::var("KANI_WINDOWS_SKIP_ENFORCE_CONTRACT")
@@ -515,6 +520,13 @@ impl KaniSession {
             eprintln!(
                 "[kani/windows-timeout] starting phase={phase} timeout_secs={timeout_secs} args={rendered_args}"
             );
+            if let (Some(short_file), Some(original_file)) = (&short_file, &original_file) {
+                eprintln!(
+                    "[kani/windows-timeout] phase={phase} original_file={} short_file={}",
+                    original_file.display(),
+                    short_file.display()
+                );
+            }
         }
         if self.args.common_args.quiet {
             cmd.stdout(std::process::Stdio::null());
@@ -529,6 +541,9 @@ impl KaniSession {
         loop {
             if let Some(status) = child.try_wait()? {
                 if !status.success() {
+                    if let Some(short_file) = &short_file {
+                        maybe_preserve_windows_goto_model(short_file, phase, "failed");
+                    }
                     if let Some(short_file) = &short_file {
                         let _ = fs::remove_file(short_file);
                     }
@@ -553,6 +568,9 @@ impl KaniSession {
                         "[kani/windows-timeout] timeout phase={phase} elapsed_secs={} killing goto-instrument",
                         start.elapsed().as_secs()
                     );
+                }
+                if let Some(short_file) = &short_file {
+                    maybe_preserve_windows_goto_model(short_file, phase, "timeout");
                 }
                 let _ = child.kill();
                 let _ = child.wait();
@@ -679,6 +697,42 @@ fn contract_anchor(contract: &str) -> Option<String> {
 
 fn preferred_contract_shape(contract: &str) -> Option<&'static str> {
     ["Es0_", "Es1_", "Es_", "E0"].into_iter().find(|shape| contract.contains(shape))
+}
+
+#[cfg(windows)]
+fn maybe_preserve_windows_goto_model(file: &Path, phase: &str, reason: &str) {
+    let preserve = std::env::var("KANI_WINDOWS_PRESERVE_GOTO_MODELS")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    if !preserve || !file.exists() {
+        return;
+    }
+
+    static PRESERVED_GOTO_MODEL_COUNTER: AtomicU64 = AtomicU64::new(0);
+    let unique = PRESERVED_GOTO_MODEL_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let phase = sanitize_windows_debug_label(phase);
+    let reason = sanitize_windows_debug_label(reason);
+    let preserved = file.with_file_name(format!("kani-preserved-{phase}-{reason}-{unique}.out"));
+    match fs::copy(file, &preserved) {
+        Ok(_) => eprintln!(
+            "[kani/windows-debug] preserved src={} dst={}",
+            file.display(),
+            preserved.display()
+        ),
+        Err(err) => {
+            eprintln!("[kani/windows-debug] failed to preserve src={} err={err}", file.display())
+        }
+    }
+}
+
+#[cfg(windows)]
+fn sanitize_windows_debug_label(label: &str) -> String {
+    label
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string()
 }
 
 fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
