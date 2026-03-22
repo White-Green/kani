@@ -110,6 +110,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
 fi
 WINDOWS_SUITE_FILTER="${KANI_WINDOWS_SUITE_FILTER:-}"
 WINDOWS_COMPILETEST_FILTER="${KANI_WINDOWS_COMPILETEST_FILTER:-}"
+WINDOWS_ALLOWED_SKIPPED_SUITES="${KANI_WINDOWS_ALLOWED_SKIPPED_SUITES:-}"
 WINDOWS_HEARTBEAT_INTERVAL_SEC="${KANI_WINDOWS_REGRESSION_HEARTBEAT_SEC:-60}"
 WINDOWS_HEARTBEAT_PID=""
 
@@ -233,8 +234,21 @@ for testp in "${TESTS[@]}"; do
       fi
     fi
     if [[ " ${WINDOWS_SKIPPED_SUITES[*]} " == *" ${suite} "* ]]; then
-      echo "Skipping compiletest suite=$suite mode=$mode on Windows"
-      continue
+      SUITE_EXPLICITLY_ALLOWED=false
+      if [[ -n "${WINDOWS_ALLOWED_SKIPPED_SUITES}" ]]; then
+        IFS=',' read -ra WINDOWS_ALLOWED_SKIPPED_SUITES_ARR <<< "${WINDOWS_ALLOWED_SKIPPED_SUITES}"
+        for allowed_skipped_suite in "${WINDOWS_ALLOWED_SKIPPED_SUITES_ARR[@]}"; do
+          if [[ "${suite}" == "${allowed_skipped_suite}" ]]; then
+            SUITE_EXPLICITLY_ALLOWED=true
+            break
+          fi
+        done
+      fi
+      if [[ "${SUITE_EXPLICITLY_ALLOWED}" != "true" ]]; then
+        echo "Skipping compiletest suite=$suite mode=$mode on Windows"
+        continue
+      fi
+      echo "Overriding Windows skipped suite for suite=$suite mode=$mode via KANI_WINDOWS_ALLOWED_SKIPPED_SUITES=${WINDOWS_ALLOWED_SKIPPED_SUITES}"
     fi
     echo "Check compiletest suite=$suite mode=$mode"
     WINDOWS_COMPILETEST_ARGS=(--no-fail-fast --timeout 5400)
