@@ -27,6 +27,7 @@ jobs:
       KANI_WINDOWS_COMPILETEST_FILTER: "mem.expected"
       KANI_WINDOWS_GOTO_INSTRUMENT_TRACE: "1"
       KANI_WINDOWS_PRESERVE_GOTO_MODELS: "1"
+      KANI_WINDOWS_SKIP_ENFORCE_CONTRACT: "0"
     strategy:
       fail-fast: false
       matrix:

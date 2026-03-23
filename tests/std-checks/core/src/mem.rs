@@ -87,7 +87,6 @@ mod verify {
         kani::assert(x_before == x_returned, "x_before == x_returned");
     }
 
-    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::replace)]
     pub fn check_replace_adt_no_drop() {
         let mut x: CannotDrop<u8> = kani::any();
