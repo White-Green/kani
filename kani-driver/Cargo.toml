@@ -37,6 +37,9 @@ time = {version = "0.3.47", features = ["formatting"]}
 tokio = { version = "1.40.0", features = ["io-util", "process", "rt", "time"] }
 chrono = { version = "0.4.41", default-features = false, features = [ "clock" ]}
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
 
 # A good set of suggested dependencies can be found in rustup:
 # https://github.com/rust-lang/rustup/blob/master/Cargo.toml

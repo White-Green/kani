@@ -6,12 +6,20 @@ use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
+#[cfg(windows)]
+use std::os::windows::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 #[cfg(windows)]
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(windows)]
 use std::time::{Duration, Instant};
+#[cfg(windows)]
+use windows_sys::Win32::Foundation::{STILL_ACTIVE, WAIT_OBJECT_0, WAIT_TIMEOUT};
+#[cfg(windows)]
+use windows_sys::Win32::System::Threading::{GetExitCodeProcess, WaitForSingleObject};
 
 use crate::metadata::collect_and_link_function_pointer_restrictions;
 use crate::project::Project;
@@ -551,10 +559,11 @@ impl KaniSession {
         let mut child = cmd.spawn().with_context(|| {
             format!("Failed to invoke goto-instrument ({}) with timeout {}s", phase, timeout_secs)
         })?;
+        let process_handle = child.as_raw_handle();
         let start = Instant::now();
 
         loop {
-            if let Some(status) = child.try_wait()? {
+            if let Some(status) = windows_child_status(&child)? {
                 if !status.success() {
                     if let Some(short_file) = &short_file {
                         maybe_preserve_windows_goto_model(short_file, phase, "failed");
@@ -588,31 +597,7 @@ impl KaniSession {
                     maybe_preserve_windows_goto_model(short_file, phase, "timeout");
                 }
                 let _ = child.kill();
-                let kill_wait_deadline = Instant::now() + Duration::from_secs(5);
-                loop {
-                    match child.try_wait() {
-                        Ok(Some(_)) => break,
-                        Ok(None) if Instant::now() < kill_wait_deadline => {
-                            std::thread::sleep(Duration::from_millis(100));
-                        }
-                        Ok(None) => {
-                            if trace_timeout {
-                                eprintln!(
-                                    "[kani/windows-timeout] phase={phase} child did not exit within 5s after kill; continuing without blocking wait"
-                                );
-                            }
-                            break;
-                        }
-                        Err(err) => {
-                            if trace_timeout {
-                                eprintln!(
-                                    "[kani/windows-timeout] phase={phase} try_wait after kill failed: {err}"
-                                );
-                            }
-                            break;
-                        }
-                    }
-                }
+                let _ = wait_for_windows_child_exit(process_handle, Duration::from_secs(5));
                 if let Some(short_file) = &short_file {
                     let _ = fs::remove_file(short_file);
                 }
@@ -736,6 +721,41 @@ fn contract_anchor(contract: &str) -> Option<String> {
 
 fn preferred_contract_shape(contract: &str) -> Option<&'static str> {
     ["Es0_", "Es1_", "Es_", "E0"].into_iter().find(|shape| contract.contains(shape))
+}
+
+#[cfg(windows)]
+fn windows_child_status(child: &std::process::Child) -> Result<Option<ExitStatus>> {
+    let handle = child.as_raw_handle();
+    match unsafe { WaitForSingleObject(handle, 0) } {
+        WAIT_TIMEOUT => Ok(None),
+        WAIT_OBJECT_0 => {
+            let mut exit_code = 0u32;
+            let ok = unsafe { GetExitCodeProcess(handle, &mut exit_code) };
+            if ok == 0 {
+                anyhow::bail!("GetExitCodeProcess failed for goto-instrument child");
+            }
+            if exit_code == STILL_ACTIVE as u32 {
+                return Ok(None);
+            }
+            Ok(Some(ExitStatus::from_raw(exit_code)))
+        }
+        status => anyhow::bail!("WaitForSingleObject failed for goto-instrument child: {status}"),
+    }
+}
+
+#[cfg(windows)]
+fn wait_for_windows_child_exit(
+    process_handle: std::os::windows::io::RawHandle,
+    timeout: Duration,
+) -> Result<bool> {
+    let timeout_ms = timeout.as_millis().min(u128::from(u32::MAX)) as u32;
+    match unsafe { WaitForSingleObject(process_handle, timeout_ms) } {
+        WAIT_OBJECT_0 => Ok(true),
+        WAIT_TIMEOUT => Ok(false),
+        status => anyhow::bail!(
+            "WaitForSingleObject after kill failed for goto-instrument child: {status}"
+        ),
+    }
 }
 
 #[cfg(windows)]
