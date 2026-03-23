@@ -97,7 +97,6 @@ mod verify {
     }
 
     /// Memory replace logic is optimized according to the size and alignment of a type.
-    #[cfg(not(windows))]
     #[kani::proof_for_contract(contracts::replace)]
     pub fn check_replace_large_adt_no_drop() {
         let mut x: CannotDrop<[u128; 4]> = kani::any();
