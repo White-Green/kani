@@ -400,7 +400,7 @@ impl KaniSession {
             if let Err(original_err) =
                 self.call_goto_instrument_with_windows_timeout(args, "--enforce-contract")
             {
-                let is_stack_overrun = is_windows_stack_buffer_overrun(&original_err);
+                let is_stack_overrun = is_windows_retryable_contract_crash(&original_err);
                 let is_timeout = is_windows_goto_instrument_timeout(&original_err);
                 if !is_stack_overrun && !is_timeout {
                     return Err(original_err);
@@ -454,7 +454,7 @@ impl KaniSession {
                             return Ok(());
                         }
                         Err(retry_err)
-                            if is_windows_stack_buffer_overrun(&retry_err)
+                            if is_windows_retryable_contract_crash(&retry_err)
                                 || is_windows_goto_instrument_timeout(&retry_err) =>
                         {
                             continue;
@@ -735,10 +735,13 @@ fn sanitize_windows_debug_label(label: &str) -> String {
         .to_string()
 }
 
-fn is_windows_stack_buffer_overrun(err: &anyhow::Error) -> bool {
+fn is_windows_retryable_contract_crash(err: &anyhow::Error) -> bool {
     let text = format!("{err:#}");
     let simple = err.to_string();
-    text.contains("0xc0000409") || simple.contains("0xc0000409")
+    text.contains("0xc0000409")
+        || simple.contains("0xc0000409")
+        || text.contains("0xc00000fd")
+        || simple.contains("0xc00000fd")
 }
 
 #[cfg(windows)]
