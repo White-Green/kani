@@ -409,6 +409,9 @@ impl KaniSession {
                 let Some(requested_contract) = enforce_contract_target(args) else {
                     return Err(original_err);
                 };
+                let trace_fallback = std::env::var("KANI_WINDOWS_GOTO_INSTRUMENT_TRACE")
+                    .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                    .unwrap_or(false);
 
                 if is_timeout {
                     fs::copy(&backup_file, file).with_context(|| {
@@ -427,9 +430,28 @@ impl KaniSession {
                     return Ok(());
                 }
 
+                if trace_fallback {
+                    eprintln!(
+                        "[kani/windows-fallback] requested_contract={requested_contract} initial_error={original_err:#}"
+                    );
+                    eprintln!(
+                        "[kani/windows-fallback] scanning symbol table for alternative contract symbols"
+                    );
+                }
                 let candidates =
                     self.find_alternative_contract_symbols(&backup_file, requested_contract)?;
+                if trace_fallback {
+                    eprintln!(
+                        "[kani/windows-fallback] requested_contract={requested_contract} candidate_count={}",
+                        candidates.len()
+                    );
+                }
                 for candidate in candidates {
+                    if trace_fallback {
+                        eprintln!(
+                            "[kani/windows-fallback] trying fallback candidate={candidate} for requested_contract={requested_contract}"
+                        );
+                    }
                     fs::copy(&backup_file, file).with_context(|| {
                         format!(
                             "Failed to restore goto model {} from backup {}",
@@ -445,6 +467,11 @@ impl KaniSession {
                         "--enforce-contract",
                     ) {
                         Ok(()) => {
+                            if trace_fallback {
+                                eprintln!(
+                                    "[kani/windows-fallback] fallback candidate succeeded candidate={candidate} for requested_contract={requested_contract}"
+                                );
+                            }
                             if !self.args.common_args.quiet {
                                 println!(
                                     "Warning: Retried --enforce-contract with fallback symbol `{}` after Windows goto-instrument crash for `{}`",
@@ -457,6 +484,11 @@ impl KaniSession {
                             if is_windows_retryable_contract_crash(&retry_err)
                                 || is_windows_goto_instrument_timeout(&retry_err) =>
                         {
+                            if trace_fallback {
+                                eprintln!(
+                                    "[kani/windows-fallback] fallback candidate failed candidate={candidate} err={retry_err:#}"
+                                );
+                            }
                             continue;
                         }
                         Err(retry_err) => return Err(retry_err),
