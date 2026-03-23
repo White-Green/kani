@@ -413,23 +413,6 @@ impl KaniSession {
                     .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                     .unwrap_or(false);
 
-                if is_timeout {
-                    fs::copy(&backup_file, file).with_context(|| {
-                        format!(
-                            "Failed to restore goto model {} from backup {}",
-                            file.display(),
-                            backup_file.display()
-                        )
-                    })?;
-                    if !self.args.common_args.quiet {
-                        println!(
-                            "Warning: Skipping --enforce-contract for {} on Windows after goto-instrument timeout",
-                            requested_contract
-                        );
-                    }
-                    return Ok(());
-                }
-
                 if trace_fallback {
                     eprintln!(
                         "[kani/windows-fallback] requested_contract={requested_contract} initial_error={original_err:#}"
