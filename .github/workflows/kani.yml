@@ -46,6 +46,16 @@ jobs:
         run: ./scripts/kani-regression.sh
         shell: bash
 
+      - name: Upload Windows Debug GOTO Models
+        if: ${{ failure() && startsWith(matrix.os, 'windows') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-debug-goto-models-${{ github.run_id }}-${{ matrix.os }}
+          if-no-files-found: ignore
+          path: |
+            build/**/deps/kani-preserved-*.out
+            build/**/deps/kani-goto-instrument-*.out
+
   benchcomp-tests:
     # TEMPORARY: skip on push while focusing on Windows regression bring-up.
     if: ${{ github.event_name != 'push' }}
