@@ -422,24 +422,24 @@ impl KaniSession {
                     .unwrap_or(false);
 
                 if trace_fallback {
-                    eprintln!(
+                    println!(
                         "[kani/windows-fallback] requested_contract={requested_contract} initial_error={original_err:#}"
                     );
-                    eprintln!(
+                    println!(
                         "[kani/windows-fallback] scanning symbol table for alternative contract symbols"
                     );
                 }
                 let candidates =
                     self.find_alternative_contract_symbols(&backup_file, requested_contract)?;
                 if trace_fallback {
-                    eprintln!(
+                    println!(
                         "[kani/windows-fallback] requested_contract={requested_contract} candidate_count={}",
                         candidates.len()
                     );
                 }
                 for candidate in candidates {
                     if trace_fallback {
-                        eprintln!(
+                        println!(
                             "[kani/windows-fallback] trying fallback candidate={candidate} for requested_contract={requested_contract}"
                         );
                     }
@@ -459,7 +459,7 @@ impl KaniSession {
                     ) {
                         Ok(()) => {
                             if trace_fallback {
-                                eprintln!(
+                                println!(
                                     "[kani/windows-fallback] fallback candidate succeeded candidate={candidate} for requested_contract={requested_contract}"
                                 );
                             }
@@ -476,7 +476,7 @@ impl KaniSession {
                                 || is_windows_goto_instrument_timeout(&retry_err) =>
                         {
                             if trace_fallback {
-                                eprintln!(
+                                println!(
                                     "[kani/windows-fallback] fallback candidate failed candidate={candidate} err={retry_err:#}"
                                 );
                             }
@@ -540,11 +540,11 @@ impl KaniSession {
                 .map(|arg| arg.to_string_lossy())
                 .collect::<Vec<_>>()
                 .join(" ");
-            eprintln!(
+            println!(
                 "[kani/windows-timeout] starting phase={phase} timeout_secs={timeout_secs} args={rendered_args}"
             );
             if let (Some(short_file), Some(original_file)) = (&short_file, &original_file) {
-                eprintln!(
+                println!(
                     "[kani/windows-timeout] phase={phase} original_file={} short_file={}",
                     original_file.display(),
                     short_file.display()
@@ -588,7 +588,7 @@ impl KaniSession {
 
             if start.elapsed() >= timeout {
                 if trace_timeout {
-                    eprintln!(
+                    println!(
                         "[kani/windows-timeout] timeout phase={phase} elapsed_secs={} killing goto-instrument",
                         start.elapsed().as_secs()
                     );
