@@ -588,7 +588,31 @@ impl KaniSession {
                     maybe_preserve_windows_goto_model(short_file, phase, "timeout");
                 }
                 let _ = child.kill();
-                let _ = child.wait();
+                let kill_wait_deadline = Instant::now() + Duration::from_secs(5);
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(_)) => break,
+                        Ok(None) if Instant::now() < kill_wait_deadline => {
+                            std::thread::sleep(Duration::from_millis(100));
+                        }
+                        Ok(None) => {
+                            if trace_timeout {
+                                eprintln!(
+                                    "[kani/windows-timeout] phase={phase} child did not exit within 5s after kill; continuing without blocking wait"
+                                );
+                            }
+                            break;
+                        }
+                        Err(err) => {
+                            if trace_timeout {
+                                eprintln!(
+                                    "[kani/windows-timeout] phase={phase} try_wait after kill failed: {err}"
+                                );
+                            }
+                            break;
+                        }
+                    }
+                }
                 if let Some(short_file) = &short_file {
                     let _ = fs::remove_file(short_file);
                 }
